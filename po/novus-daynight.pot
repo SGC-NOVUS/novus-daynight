@@ -1,0 +1,786 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Novus DayNight 2.0\n"
+"Report-Msgid-Bugs-To: https://github.com/SGC-NOVUS/novus-daynight/issues\n"
+"POT-Creation-Date: 2026-10-31 19:00+0200\n"
+"PO-Revision-Date: 2026-10-31 19:00+0200\n"
+"Last-Translator: SGC-NOVUS\n"
+"Language-Team: LANGUAGE\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "%d of %d monitors enabled"
+msgstr ""
+
+msgid "%dh %dm %ds"
+msgstr ""
+
+msgid "%s mode (manual)"
+msgstr ""
+
+msgid "1 hour"
+msgstr ""
+
+msgid "1.5 hours"
+msgstr ""
+
+msgid "15 minutes"
+msgstr ""
+
+msgid "2 hours"
+msgstr ""
+
+msgid "2.5 hours"
+msgstr ""
+
+msgid "3 hours"
+msgstr ""
+
+msgid "30 minutes"
+msgstr ""
+
+msgid "About"
+msgstr ""
+
+msgid "About Auto-Detection:"
+msgstr ""
+
+msgid "Active Period"
+msgstr ""
+
+msgid "Add DayNight mode switcher to the GNOME top-bar system menu"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+msgid "Apply the active day/night wallpaper to the lock screen as well"
+msgstr ""
+
+msgid "Author"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "Auto Schedule"
+msgstr ""
+
+msgid "Auto-Pair"
+msgstr ""
+
+msgid "Auto-Pair Light & Dark Themes"
+msgstr ""
+
+msgid "Automatic Schedule"
+msgstr ""
+
+msgid "Automatic light and dark theme switching based on sunrise/sunset with smooth display brightness control."
+msgstr ""
+
+msgid "Automatic schedule paused • Click \"Auto Schedule\" to resume"
+msgstr ""
+
+msgid "Automatic theme & brightness"
+msgstr ""
+
+msgid "Automatically detect your approximate location"
+msgstr ""
+
+msgid "Automatically match the selected theme with its light/dark counterpart"
+msgstr ""
+
+msgid "Automatically switch Yaru light/dark variants when accent color changes"
+msgstr ""
+
+msgid "Background Service Offline"
+msgstr ""
+
+msgid "Based on Automatic Theme Switcher by Amritashan S. Lal (GPL-3.0)"
+msgstr ""
+
+msgid "Brightness"
+msgstr ""
+
+msgid "Brightness Control"
+msgstr ""
+
+msgid "Brightness Control Status"
+msgstr ""
+
+msgid "Brightness Details"
+msgstr ""
+
+msgid "Brightness State"
+msgstr ""
+
+msgid "Brightness Transitions"
+msgstr ""
+
+msgid "Brightness restored on %s"
+msgstr ""
+
+msgid "Built-in Display"
+msgstr ""
+
+msgid "Built-in Display Backlight"
+msgstr ""
+
+msgid "Calculated Solar Times"
+msgstr ""
+
+msgid "Calculating…"
+msgstr ""
+
+msgid "Calculation Method"
+msgstr ""
+
+msgid "Checking GNOME D-Bus backlight service…"
+msgstr ""
+
+msgid "Checking com.ddcutil.DdcutilService…"
+msgstr ""
+
+msgid "Checking status…"
+msgstr ""
+
+msgid "Choose File…"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "Click Reset to follow the day/night schedule again."
+msgstr ""
+
+msgid "Click the refresh button in the header bar to scan for external displays"
+msgstr ""
+
+msgid "Click to expand"
+msgstr ""
+
+msgid "Configure Location"
+msgstr ""
+
+msgid "Configure Monitors"
+msgstr ""
+
+msgid "Configure brightness for built-in and external monitors"
+msgstr ""
+
+msgid "Configure your location below to use solar events"
+msgstr ""
+
+msgid "Configure…"
+msgstr ""
+
+msgid "Control Brightness"
+msgstr ""
+
+msgid "Coordinates"
+msgstr ""
+
+msgid "Credits & License"
+msgstr ""
+
+msgid "Current Time"
+msgstr ""
+
+msgid "Custom Schedule"
+msgstr ""
+
+msgid "Custom Time"
+msgstr ""
+
+msgid "Custom times"
+msgstr ""
+
+msgid "D-Bus Display Backends"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Dark Mode"
+msgstr ""
+
+msgid "Dark Mode Brightness"
+msgstr ""
+
+msgid "Dark Mode Switch Time"
+msgstr ""
+
+msgid "Dark Mode Time"
+msgstr ""
+
+msgid "Dark Mode Wallpaper"
+msgstr ""
+
+msgid "Dark Theme"
+msgstr ""
+
+msgid "Dawn"
+msgstr ""
+
+msgid "Dawn (civil twilight)"
+msgstr ""
+
+msgid "Day"
+msgstr ""
+
+msgid "Day (Light)"
+msgstr ""
+
+msgid "Day Mode (Light Theme)"
+msgstr ""
+
+msgid "Day Mode (Light)"
+msgstr ""
+
+msgid "DayNight"
+msgstr ""
+
+msgid "DayNight Settings…"
+msgstr ""
+
+msgid "Debug Logging"
+msgstr ""
+
+msgid "Delete stored brightness settings for this disconnected display"
+msgstr ""
+
+msgid "Desktop Wallpaper"
+msgstr ""
+
+msgid "Detect"
+msgstr ""
+
+msgid "Detect My Location"
+msgstr ""
+
+msgid "Detect external monitors"
+msgstr ""
+
+msgid "Detected %d external monitor(s)"
+msgstr ""
+
+msgid "Detecting external monitors…"
+msgstr ""
+
+msgid "Developer & Organization"
+msgstr ""
+
+msgid "Diagnostics & Logging"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Disconnected"
+msgstr ""
+
+msgid "Display %d"
+msgstr ""
+
+msgid "Display a notification when theme switches automatically"
+msgstr ""
+
+msgid "Dual Wallpaper Pair"
+msgstr ""
+
+msgid "Dual Wallpaper Theme (Day & Night in pair)"
+msgstr ""
+
+msgid "Dusk"
+msgstr ""
+
+msgid "Dusk (civil twilight)"
+msgstr ""
+
+msgid "Each monitor can use independent day and night brightness levels"
+msgstr ""
+
+msgid "Early Dawn"
+msgstr ""
+
+msgid "Early Dawn (nautical twilight)"
+msgstr ""
+
+msgid "Enable Novus DayNight in GNOME Extensions to start automatic switching"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "Evening Golden Hour Begins"
+msgstr ""
+
+msgid "External DDC/CI monitors not managed natively by Mutter require the com.ddcutil.DdcutilService session D-Bus service (package: ddcutil-service) and read/write access to /dev/i2c-*."
+msgstr ""
+
+msgid "External Monitor D-Bus Service"
+msgstr ""
+
+msgid "External Monitors"
+msgstr ""
+
+msgid "External Monitors (DDC/CI D-Bus)"
+msgstr ""
+
+msgid "Failed to restore brightness on %s"
+msgstr ""
+
+msgid "Falls back to ipinfo.io if GeoClue2 is unavailable"
+msgstr ""
+
+msgid "First Hint of Light"
+msgstr ""
+
+msgid "First Hint of Light (astronomical dawn)"
+msgstr ""
+
+msgid "Follow System Night Light"
+msgstr ""
+
+msgid "Following schedule"
+msgstr ""
+
+msgid "GNU General Public License v3.0 (GPL-3.0)"
+msgstr ""
+
+msgid "GitHub Repository"
+msgstr ""
+
+msgid "Gradual brightening"
+msgstr ""
+
+msgid "Gradual dimming"
+msgstr ""
+
+msgid "Gradually adjust brightness before theme changes"
+msgstr ""
+
+msgid "Gradually adjust screen brightness throughout the day"
+msgstr ""
+
+msgid "Gradually decrease brightness before dark mode"
+msgstr ""
+
+msgid "Gradually increase brightness before light mode"
+msgstr ""
+
+msgid "Image Files"
+msgstr ""
+
+msgid "In transition"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "Initialize…"
+msgstr ""
+
+msgid "Invalid location data received"
+msgstr ""
+
+msgid "Issues"
+msgstr ""
+
+msgid "Just detected"
+msgstr ""
+
+msgid "Laptop or integrated panel via GNOME D-Bus"
+msgstr ""
+
+msgid "Last detected %d hr ago"
+msgstr ""
+
+msgid "Last detected %d min ago"
+msgstr ""
+
+msgid "Late Dusk"
+msgstr ""
+
+msgid "Late Dusk (nautical twilight)"
+msgstr ""
+
+msgid "Latitude"
+msgstr ""
+
+msgid "License"
+msgstr ""
+
+msgid "Light"
+msgstr ""
+
+msgid "Light Mode"
+msgstr ""
+
+msgid "Light Mode Brightness"
+msgstr ""
+
+msgid "Light Mode Switch Time"
+msgstr ""
+
+msgid "Light Mode Time"
+msgstr ""
+
+msgid "Light Mode Wallpaper"
+msgstr ""
+
+msgid "Light Theme"
+msgstr ""
+
+msgid "Light: %s, Dark: %s, Current: %s"
+msgstr ""
+
+msgid "Loading…"
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "Location Detection Failed"
+msgstr ""
+
+msgid "Location Information"
+msgstr ""
+
+msgid "Location Settings"
+msgstr ""
+
+msgid "Location configured"
+msgstr ""
+
+msgid "Location detected"
+msgstr ""
+
+msgid "Location service returned error %d"
+msgstr ""
+
+msgid "Longitude"
+msgstr ""
+
+msgid "Manual"
+msgstr ""
+
+msgid "Manual Mode"
+msgstr ""
+
+msgid "Manual Override Active"
+msgstr ""
+
+msgid "Manual override active"
+msgstr ""
+
+msgid "Monitor Configuration"
+msgstr ""
+
+msgid "Morning Golden Hour Ends"
+msgstr ""
+
+msgid "Native GNOME session D-Bus interfaces used for brightness control"
+msgstr ""
+
+msgid "Next Transition"
+msgstr ""
+
+msgid "Next switch at %s"
+msgstr ""
+
+msgid "Next switch to %s theme at %s"
+msgstr ""
+
+msgid "Night"
+msgstr ""
+
+msgid "Night (Dark)"
+msgstr ""
+
+msgid "Night Light Control"
+msgstr ""
+
+msgid "Night Light End Time (24-hour)"
+msgstr ""
+
+msgid "Night Light Mode"
+msgstr ""
+
+msgid "Night Light Start Time (24-hour)"
+msgstr ""
+
+msgid "Night Mode (Dark Theme)"
+msgstr ""
+
+msgid "Night Mode (Dark)"
+msgstr ""
+
+msgid "Nightfall"
+msgstr ""
+
+msgid "Nightfall (astronomical dusk)"
+msgstr ""
+
+msgid "No coordinates set"
+msgstr ""
+
+msgid "No external DDC/CI monitors detected"
+msgstr ""
+
+msgid "No external monitors configured"
+msgstr ""
+
+msgid "No internal laptop panel reported by GNOME D-Bus"
+msgstr ""
+
+msgid "No monitors configured"
+msgstr ""
+
+msgid "No wallpaper selected"
+msgstr ""
+
+msgid "Not configured - using custom times"
+msgstr ""
+
+msgid "Not in adjustment window"
+msgstr ""
+
+msgid "Not set"
+msgstr ""
+
+msgid "Novus DayNight"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "Off until reset"
+msgstr ""
+
+msgid "Official Website"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Optional: install ddcutil-service (com.ddcutil.DdcutilService) for external DDC/CI displays"
+msgstr ""
+
+msgid "Override set to Dark mode"
+msgstr ""
+
+msgid "Override set to Light mode"
+msgstr ""
+
+msgid "Paired themes: %s / %s"
+msgstr ""
+
+msgid "Preview Dark Theme"
+msgstr ""
+
+msgid "Preview Light Theme"
+msgstr ""
+
+msgid "Previewing brightness on %s"
+msgstr ""
+
+msgid "Project Links"
+msgstr ""
+
+msgid "Querying Mutter and DdcutilService over D-Bus"
+msgstr ""
+
+msgid "Rate limit exceeded. Please try again tomorrow or enter coordinates manually."
+msgstr ""
+
+msgid "Re-check D-Bus backends"
+msgstr ""
+
+msgid "Reading…"
+msgstr ""
+
+msgid "Ready natively via org.gnome.Mutter.DisplayConfig D-Bus"
+msgstr ""
+
+msgid "Ready via com.ddcutil.DdcutilService D-Bus"
+msgstr ""
+
+msgid "Ready via org.gnome.Mutter.DisplayConfig D-Bus"
+msgstr ""
+
+msgid "Ready via org.gnome.SettingsDaemon.Power D-Bus"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "Refresh Status"
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+msgid "Remove Saved Monitor"
+msgstr ""
+
+msgid "Report an Issue / Suggestion"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "Return to automatic schedule"
+msgstr ""
+
+msgid "Reverse geocoding via OpenStreetMap for city name"
+msgstr ""
+
+msgid "Schedule"
+msgstr ""
+
+msgid "Schedule Information"
+msgstr ""
+
+msgid "Screen brightness at night (%)"
+msgstr ""
+
+msgid "Screen brightness during daytime (%)"
+msgstr ""
+
+msgid "Separate Custom Files (Day and Night separately)"
+msgstr ""
+
+msgid "Show Notifications"
+msgstr ""
+
+msgid "Show in Quick Settings"
+msgstr ""
+
+msgid "Solar Midnight"
+msgstr ""
+
+msgid "Solar Noon"
+msgstr ""
+
+msgid "Solar calculations by Vladimir Agafonkin (BSD-2-Clause)"
+msgstr ""
+
+msgid "Solar events (local calculation)"
+msgstr ""
+
+msgid "Solar events are now available for automatic theme switching"
+msgstr ""
+
+msgid "Solar events include sunrise, sunset, dawn, dusk, and more"
+msgstr ""
+
+msgid "Static brightness"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Sun Fully Up"
+msgstr ""
+
+msgid "Sunrise"
+msgstr ""
+
+msgid "Sunrise: %s, Sunset: %s"
+msgstr ""
+
+msgid "Sunset"
+msgstr ""
+
+msgid "Sunset Begins"
+msgstr ""
+
+msgid "Support for dual day/night wallpaper pairs and separate custom images"
+msgstr ""
+
+msgid "Switched to dark mode"
+msgstr ""
+
+msgid "Switched to light mode"
+msgstr ""
+
+msgid "Sync Lock Screen Wallpaper"
+msgstr ""
+
+msgid "Sync with System Accent Color"
+msgstr ""
+
+msgid "Sync with Theme"
+msgstr ""
+
+msgid "System day/night wallpapers with automatic smooth transition"
+msgstr ""
+
+msgid "Theme Settings"
+msgstr ""
+
+msgid "Theme Switch Timing"
+msgstr ""
+
+msgid "Theme to use at night"
+msgstr ""
+
+msgid "Theme to use during the day"
+msgstr ""
+
+msgid "Time Until Next Switch"
+msgstr ""
+
+msgid "Timezone"
+msgstr ""
+
+msgid "Today"
+msgstr ""
+
+msgid "Tomorrow"
+msgstr ""
+
+msgid "True Light Mode"
+msgstr ""
+
+msgid "Unable to detect your location. Please enter coordinates manually."
+msgstr ""
+
+msgid "Unknown Monitor"
+msgstr ""
+
+msgid "Update all displayed values immediately"
+msgstr ""
+
+msgid "Upstream Project"
+msgstr ""
+
+msgid "Use prefer-light color scheme during daytime"
+msgstr ""
+
+msgid "Uses native Linux GeoClue2 service for coordinates"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Visit"
+msgstr ""
+
+msgid "Wallpaper Mode"
+msgstr ""
+
+msgid "Write verbose diagnostics to the system journal"
+msgstr ""
+
+msgid "ddcutil-service Not Detected"
+msgstr ""
+
+msgid "suncalc Library"
+msgstr ""

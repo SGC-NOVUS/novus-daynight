@@ -1,0 +1,787 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Novus DayNight 2.0\n"
+"Report-Msgid-Bugs-To: https://github.com/SGC-NOVUS/novus-daynight/issues\n"
+"POT-Creation-Date: 2026-10-31 19:00+0200\n"
+"PO-Revision-Date: 2026-10-31 19:00+0200\n"
+"Last-Translator: SGC-NOVUS\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "%d of %d monitors enabled"
+msgstr "Включено мониторов: %d из %d"
+
+msgid "%dh %dm %ds"
+msgstr "%d ч %d мин %d с"
+
+msgid "%s mode (manual)"
+msgstr "%s режим (вручную)"
+
+msgid "1 hour"
+msgstr "1 час"
+
+msgid "1.5 hours"
+msgstr "1,5 часа"
+
+msgid "15 minutes"
+msgstr "15 минут"
+
+msgid "2 hours"
+msgstr "2 часа"
+
+msgid "2.5 hours"
+msgstr "2,5 часа"
+
+msgid "3 hours"
+msgstr "3 часа"
+
+msgid "30 minutes"
+msgstr "30 минут"
+
+msgid "About"
+msgstr "О расширении"
+
+msgid "About Auto-Detection:"
+msgstr "Об автоопределении:"
+
+msgid "Active Period"
+msgstr "Активный период"
+
+msgid "Add DayNight mode switcher to the GNOME top-bar system menu"
+msgstr "Добавить переключатель режимов DayNight в системное меню GNOME"
+
+msgid "Appearance"
+msgstr "Внешний вид"
+
+msgid "Apply the active day/night wallpaper to the lock screen as well"
+msgstr "Применять активные дневные/ночные обои также к экрану блокировки"
+
+msgid "Author"
+msgstr "Автор"
+
+msgid "Auto"
+msgstr "Авто"
+
+msgid "Auto Schedule"
+msgstr "Авторасписание"
+
+msgid "Auto-Pair"
+msgstr "Подобрать пару"
+
+msgid "Auto-Pair Light & Dark Themes"
+msgstr "Автоподбор пары светлой и тёмной тем"
+
+msgid "Automatic Schedule"
+msgstr "Автоматическое расписание"
+
+msgid "Automatic light and dark theme switching based on sunrise/sunset with smooth display brightness control."
+msgstr "Автоматическое переключение светлой и тёмной тем по восходу/закату с плавным управлением яркостью экранов."
+
+msgid "Automatic schedule paused • Click \"Auto Schedule\" to resume"
+msgstr "Автоматическое расписание приостановлено • Нажмите «Авторасписание» для возобновления"
+
+msgid "Automatic theme & brightness"
+msgstr "Автопереключение темы и яркости"
+
+msgid "Automatically detect your approximate location"
+msgstr "Автоматически определить приблизительное местоположение"
+
+msgid "Automatically match the selected theme with its light/dark counterpart"
+msgstr "Автоматически подобрать соответствующую светлую/тёмную версию выбранной темы"
+
+msgid "Automatically switch Yaru light/dark variants when accent color changes"
+msgstr "Автоматически переключать светлый и тёмный варианты Yaru при смене акцентного цвета"
+
+msgid "Background Service Offline"
+msgstr "Фоновая служба не запущена"
+
+msgid "Based on Automatic Theme Switcher by Amritashan S. Lal (GPL-3.0)"
+msgstr "Основано на Automatic Theme Switcher от Amritashan S. Lal (GPL-3.0)"
+
+msgid "Brightness"
+msgstr "Яркость"
+
+msgid "Brightness Control"
+msgstr "Управление яркостью"
+
+msgid "Brightness Control Status"
+msgstr "Статус управления яркостью"
+
+msgid "Brightness Details"
+msgstr "Подробности яркости"
+
+msgid "Brightness State"
+msgstr "Состояние яркости"
+
+msgid "Brightness Transitions"
+msgstr "Переходы яркости"
+
+msgid "Brightness restored on %s"
+msgstr "Яркость восстановлена на %s"
+
+msgid "Built-in Display"
+msgstr "Встроенный дисплей"
+
+msgid "Built-in Display Backlight"
+msgstr "Подсветка встроенного дисплея"
+
+msgid "Calculated Solar Times"
+msgstr "Расчётное время солнца"
+
+msgid "Calculating…"
+msgstr "Вычисление…"
+
+msgid "Calculation Method"
+msgstr "Способ расчёта"
+
+msgid "Checking GNOME D-Bus backlight service…"
+msgstr "Проверка службы подсветки GNOME D-Bus…"
+
+msgid "Checking com.ddcutil.DdcutilService…"
+msgstr "Проверка com.ddcutil.DdcutilService…"
+
+msgid "Checking status…"
+msgstr "Проверка статуса…"
+
+msgid "Choose File…"
+msgstr "Выбрать файл…"
+
+msgid "Clear"
+msgstr "Очистить"
+
+msgid "Click Reset to follow the day/night schedule again."
+msgstr "Нажмите «Сброс», чтобы снова следовать расписанию дня и ночи."
+
+msgid "Click the refresh button in the header bar to scan for external displays"
+msgstr "Нажмите кнопку обновления в заголовке окна для поиска внешних дисплеев"
+
+msgid "Click to expand"
+msgstr "Нажмите, чтобы развернуть"
+
+msgid "Configure Location"
+msgstr "Настройка местоположения"
+
+msgid "Configure Monitors"
+msgstr "Настройка мониторов"
+
+msgid "Configure brightness for built-in and external monitors"
+msgstr "Настройка яркости встроенного и внешних мониторов"
+
+msgid "Configure your location below to use solar events"
+msgstr "Укажите местоположение ниже, чтобы использовать астрономические события"
+
+msgid "Configure…"
+msgstr "Настроить…"
+
+msgid "Control Brightness"
+msgstr "Управлять яркостью"
+
+msgid "Coordinates"
+msgstr "Координаты"
+
+msgid "Credits & License"
+msgstr "Благодарности и лицензия"
+
+msgid "Current Time"
+msgstr "Текущее время"
+
+msgid "Custom Schedule"
+msgstr "По собственному расписанию"
+
+msgid "Custom Time"
+msgstr "Указанное время"
+
+msgid "Custom times"
+msgstr "Указанное время"
+
+msgid "D-Bus Display Backends"
+msgstr "Службы дисплеев D-Bus"
+
+msgid "Dark"
+msgstr "Тёмный"
+
+msgid "Dark Mode"
+msgstr "Тёмный режим"
+
+msgid "Dark Mode Brightness"
+msgstr "Яркость тёмного режима"
+
+msgid "Dark Mode Switch Time"
+msgstr "Время включения тёмного режима"
+
+msgid "Dark Mode Time"
+msgstr "Время тёмного режима"
+
+msgid "Dark Mode Wallpaper"
+msgstr "Обои для тёмного режима"
+
+msgid "Dark Theme"
+msgstr "Тёмная тема"
+
+msgid "Dawn"
+msgstr "Рассвет"
+
+msgid "Dawn (civil twilight)"
+msgstr "Рассвет (гражданские сумерки)"
+
+msgid "Day"
+msgstr "День"
+
+msgid "Day (Light)"
+msgstr "День (Светлая)"
+
+msgid "Day Mode (Light Theme)"
+msgstr "Дневной режим (Светлая тема)"
+
+msgid "Day Mode (Light)"
+msgstr "Дневной режим (Светлая)"
+
+msgid "DayNight"
+msgstr "День/Ночь"
+
+msgid "DayNight Settings…"
+msgstr "Настройки DayNight…"
+
+msgid "Debug Logging"
+msgstr "Журналирование отладки"
+
+msgid "Delete stored brightness settings for this disconnected display"
+msgstr "Удалить сохранённые настройки яркости для отключённого монитора"
+
+msgid "Desktop Wallpaper"
+msgstr "Обои рабочего стола"
+
+msgid "Detect"
+msgstr "Определить"
+
+msgid "Detect My Location"
+msgstr "Определить моё местоположение"
+
+msgid "Detect external monitors"
+msgstr "Обнаружить внешние мониторы"
+
+msgid "Detected %d external monitor(s)"
+msgstr "Обнаружено внешних мониторов: %d"
+
+msgid "Detecting external monitors…"
+msgstr "Поиск внешних мониторов…"
+
+msgid "Developer & Organization"
+msgstr "Разработчик и организация"
+
+msgid "Diagnostics & Logging"
+msgstr "Диагностика и журнал"
+
+msgid "Disabled"
+msgstr "Отключено"
+
+msgid "Disconnected"
+msgstr "Отключён"
+
+msgid "Display %d"
+msgstr "Дисплей %d"
+
+msgid "Display a notification when theme switches automatically"
+msgstr "Уведомлять при автоматической смене темы"
+
+msgid "Dual Wallpaper Pair"
+msgstr "Пара двойных обоев"
+
+msgid "Dual Wallpaper Theme (Day & Night in pair)"
+msgstr "Двойные обои (День + Ночь в одной теме)"
+
+msgid "Dusk"
+msgstr "Сумерки"
+
+msgid "Dusk (civil twilight)"
+msgstr "Сумерки (гражданские)"
+
+msgid "Each monitor can use independent day and night brightness levels"
+msgstr "Для каждого монитора можно задать собственные уровни дневной и ночной яркости"
+
+msgid "Early Dawn"
+msgstr "Ранний рассвет"
+
+msgid "Early Dawn (nautical twilight)"
+msgstr "Ранний рассвет (навигационные сумерки)"
+
+msgid "Enable Novus DayNight in GNOME Extensions to start automatic switching"
+msgstr "Включите Novus DayNight в Менеджере расширений GNOME для запуска автопереключения"
+
+msgid "Enabled"
+msgstr "Включено"
+
+msgid "Evening Golden Hour Begins"
+msgstr "Начало вечернего золотого часа"
+
+msgid "External DDC/CI monitors not managed natively by Mutter require the com.ddcutil.DdcutilService session D-Bus service (package: ddcutil-service) and read/write access to /dev/i2c-*."
+msgstr "Для внешних DDC/CI мониторов, не управляемых напрямую через Mutter, требуется сессионная служба D-Bus com.ddcutil.DdcutilService (пакет ddcutil-service) и доступ к /dev/i2c-*."
+
+msgid "External Monitor D-Bus Service"
+msgstr "Служба D-Bus для внешних мониторов"
+
+msgid "External Monitors"
+msgstr "Внешние мониторы"
+
+msgid "External Monitors (DDC/CI D-Bus)"
+msgstr "Внешние мониторы (DDC/CI D-Bus)"
+
+msgid "Failed to restore brightness on %s"
+msgstr "Не удалось восстановить яркость на %s"
+
+msgid "Falls back to ipinfo.io if GeoClue2 is unavailable"
+msgstr "Использует резервный сервис ipinfo.io, если GeoClue2 недоступен"
+
+msgid "First Hint of Light"
+msgstr "Первые лучи"
+
+msgid "First Hint of Light (astronomical dawn)"
+msgstr "Первые лучи (астрономический рассвет)"
+
+msgid "Follow System Night Light"
+msgstr "Следовать системной ночной подсветке"
+
+msgid "Following schedule"
+msgstr "По расписанию"
+
+msgid "GNU General Public License v3.0 (GPL-3.0)"
+msgstr "GNU General Public License v3.0 (GPL-3.0)"
+
+msgid "GitHub Repository"
+msgstr "Репозиторий GitHub"
+
+msgid "Gradual brightening"
+msgstr "Плавное осветление"
+
+msgid "Gradual dimming"
+msgstr "Плавное затемнение"
+
+msgid "Gradually adjust brightness before theme changes"
+msgstr "Плавная регулировка яркости перед сменой темы"
+
+msgid "Gradually adjust screen brightness throughout the day"
+msgstr "Плавная регулировка яркости экрана в течение дня"
+
+msgid "Gradually decrease brightness before dark mode"
+msgstr "Постепенно уменьшать яркость перед включением тёмного режима"
+
+msgid "Gradually increase brightness before light mode"
+msgstr "Постепенно увеличивать яркость перед включением светлого режима"
+
+msgid "Image Files"
+msgstr "Файлы изображений"
+
+msgid "In transition"
+msgstr "В процессе перехода"
+
+msgid "Inactive"
+msgstr "Неактивно"
+
+msgid "Initialize…"
+msgstr "Инициализировать…"
+
+msgid "Invalid location data received"
+msgstr "Получены некорректные данные о местоположении"
+
+msgid "Issues"
+msgstr "Ошибки"
+
+msgid "Just detected"
+msgstr "Только что обнаружено"
+
+msgid "Laptop or integrated panel via GNOME D-Bus"
+msgstr "Экран ноутбука или встроенная панель через GNOME D-Bus"
+
+msgid "Last detected %d hr ago"
+msgstr "Обнаружено %d ч назад"
+
+msgid "Last detected %d min ago"
+msgstr "Обнаружено %d мин назад"
+
+msgid "Late Dusk"
+msgstr "Поздние сумерки"
+
+msgid "Late Dusk (nautical twilight)"
+msgstr "Поздние сумерки (навигационные)"
+
+msgid "Latitude"
+msgstr "Широта"
+
+msgid "License"
+msgstr "Лицензия"
+
+msgid "Light"
+msgstr "Светлый"
+
+msgid "Light Mode"
+msgstr "Светлый режим"
+
+msgid "Light Mode Brightness"
+msgstr "Яркость светлого режима"
+
+msgid "Light Mode Switch Time"
+msgstr "Время включения светлого режима"
+
+msgid "Light Mode Time"
+msgstr "Время светлого режима"
+
+msgid "Light Mode Wallpaper"
+msgstr "Обои для светлого режима"
+
+msgid "Light Theme"
+msgstr "Светлая тема"
+
+msgid "Light: %s, Dark: %s, Current: %s"
+msgstr "Светлый: %s, Тёмный: %s, Текущий: %s"
+
+msgid "Loading…"
+msgstr "Загрузка…"
+
+msgid "Location"
+msgstr "Местоположение"
+
+msgid "Location Detection Failed"
+msgstr "Не удалось определить местоположение"
+
+msgid "Location Information"
+msgstr "Информация о местоположении"
+
+msgid "Location Settings"
+msgstr "Параметры местоположения"
+
+msgid "Location configured"
+msgstr "Местоположение настроено"
+
+msgid "Location detected"
+msgstr "Местоположение определено"
+
+msgid "Location service returned error %d"
+msgstr "Сервис геолокации вернул ошибку %d"
+
+msgid "Longitude"
+msgstr "Долгота"
+
+msgid "Manual"
+msgstr "Вручную"
+
+msgid "Manual Mode"
+msgstr "Ручной режим"
+
+msgid "Manual Override Active"
+msgstr "Включён ручной режим"
+
+msgid "Manual override active"
+msgstr "Активен ручной режим"
+
+msgid "Monitor Configuration"
+msgstr "Настройка мониторов"
+
+msgid "Morning Golden Hour Ends"
+msgstr "Окончание утреннего золотого часа"
+
+msgid "Native GNOME session D-Bus interfaces used for brightness control"
+msgstr "Штатные интерфейсы D-Bus сессии GNOME для управления яркостью"
+
+msgid "Next Transition"
+msgstr "Следующий переход"
+
+msgid "Next switch at %s"
+msgstr "Следующее переключение в %s"
+
+msgid "Next switch to %s theme at %s"
+msgstr "Следующее переключение на тему «%s» в %s"
+
+msgid "Night"
+msgstr "Ночь"
+
+msgid "Night (Dark)"
+msgstr "Ночь (Тёмная)"
+
+msgid "Night Light Control"
+msgstr "Ночная подсветка"
+
+msgid "Night Light End Time (24-hour)"
+msgstr "Время выключения ночной подсветки (24ч)"
+
+msgid "Night Light Mode"
+msgstr "Режим ночной подсветки"
+
+msgid "Night Light Start Time (24-hour)"
+msgstr "Время включения ночной подсветки (24ч)"
+
+msgid "Night Mode (Dark Theme)"
+msgstr "Ночной режим (Тёмная тема)"
+
+msgid "Night Mode (Dark)"
+msgstr "Ночной режим (Тёмная)"
+
+msgid "Nightfall"
+msgstr "Наступление ночи"
+
+msgid "Nightfall (astronomical dusk)"
+msgstr "Наступление ночи (астрономические сумерки)"
+
+msgid "No coordinates set"
+msgstr "Координаты не заданы"
+
+msgid "No external DDC/CI monitors detected"
+msgstr "Внешние мониторы DDC/CI не обнаружены"
+
+msgid "No external monitors configured"
+msgstr "Внешние мониторы не настроены"
+
+msgid "No internal laptop panel reported by GNOME D-Bus"
+msgstr "Встроенная панель ноутбука не обнаружена через GNOME D-Bus"
+
+msgid "No monitors configured"
+msgstr "Мониторы не настроены"
+
+msgid "No wallpaper selected"
+msgstr "Обои не выбраны"
+
+msgid "Not configured - using custom times"
+msgstr "Не настроено — используется фиксированное время"
+
+msgid "Not in adjustment window"
+msgstr "Вне окна регулировки"
+
+msgid "Not set"
+msgstr "Не задано"
+
+msgid "Novus DayNight"
+msgstr "Novus DayNight"
+
+msgid "OK"
+msgstr "ОК"
+
+msgid "Off"
+msgstr "Отключено"
+
+msgid "Off until reset"
+msgstr "Отключено до сброса"
+
+msgid "Official Website"
+msgstr "Официальный сайт"
+
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Optional: install ddcutil-service (com.ddcutil.DdcutilService) for external DDC/CI displays"
+msgstr "Опционально: установите ddcutil-service (com.ddcutil.DdcutilService) для внешних мониторов DDC/CI"
+
+msgid "Override set to Dark mode"
+msgstr "Принудительно установлен тёмный режим"
+
+msgid "Override set to Light mode"
+msgstr "Принудительно установлен светлый режим"
+
+msgid "Paired themes: %s / %s"
+msgstr "Подобрана пара тем: %s / %s"
+
+msgid "Preview Dark Theme"
+msgstr "Предпросмотр тёмной темы"
+
+msgid "Preview Light Theme"
+msgstr "Предпросмотр светлой темы"
+
+msgid "Previewing brightness on %s"
+msgstr "Предпросмотр яркости на %s"
+
+msgid "Project Links"
+msgstr "Ссылки проекта"
+
+msgid "Querying Mutter and DdcutilService over D-Bus"
+msgstr "Опрос Mutter и DdcutilService через D-Bus"
+
+msgid "Rate limit exceeded. Please try again tomorrow or enter coordinates manually."
+msgstr "Превышен лимит запросов. Попробуйте завтра или введите координаты вручную."
+
+msgid "Re-check D-Bus backends"
+msgstr "Повторно проверить службы D-Bus"
+
+msgid "Reading…"
+msgstr "Чтение…"
+
+msgid "Ready natively via org.gnome.Mutter.DisplayConfig D-Bus"
+msgstr "Готово штатно через org.gnome.Mutter.DisplayConfig D-Bus"
+
+msgid "Ready via com.ddcutil.DdcutilService D-Bus"
+msgstr "Готово через com.ddcutil.DdcutilService D-Bus"
+
+msgid "Ready via org.gnome.Mutter.DisplayConfig D-Bus"
+msgstr "Готово через org.gnome.Mutter.DisplayConfig D-Bus"
+
+msgid "Ready via org.gnome.SettingsDaemon.Power D-Bus"
+msgstr "Готово через org.gnome.SettingsDaemon.Power D-Bus"
+
+msgid "Refresh"
+msgstr "Обновить"
+
+msgid "Refresh Status"
+msgstr "Обновить статус"
+
+msgid "Remove"
+msgstr "Удалить"
+
+msgid "Remove Saved Monitor"
+msgstr "Удалить сохранённый монитор"
+
+msgid "Report an Issue / Suggestion"
+msgstr "Сообщить об ошибке / Предложение"
+
+msgid "Reset"
+msgstr "Сброс"
+
+msgid "Return to automatic schedule"
+msgstr "Вернуться к автоматическому расписанию"
+
+msgid "Reverse geocoding via OpenStreetMap for city name"
+msgstr "Обратное геокодирование через OpenStreetMap для определения города"
+
+msgid "Schedule"
+msgstr "Расписание"
+
+msgid "Schedule Information"
+msgstr "Параметры расписания"
+
+msgid "Screen brightness at night (%)"
+msgstr "Яркость экрана ночью (%)"
+
+msgid "Screen brightness during daytime (%)"
+msgstr "Яркость экрана днём (%)"
+
+msgid "Separate Custom Files (Day and Night separately)"
+msgstr "Раздельные файлы (День и Ночь отдельно)"
+
+msgid "Show Notifications"
+msgstr "Показывать уведомления"
+
+msgid "Show in Quick Settings"
+msgstr "Показывать в Быстрых настройках GNOME"
+
+msgid "Solar Midnight"
+msgstr "Солнечная полночь"
+
+msgid "Solar Noon"
+msgstr "Солнечный полдень"
+
+msgid "Solar calculations by Vladimir Agafonkin (BSD-2-Clause)"
+msgstr "Расчёт положения солнца — Владимир Агафонкин (BSD-2-Clause)"
+
+msgid "Solar events (local calculation)"
+msgstr "Астрономические события (локальный расчёт)"
+
+msgid "Solar events are now available for automatic theme switching"
+msgstr "Астрономические события теперь доступны для переключения темы"
+
+msgid "Solar events include sunrise, sunset, dawn, dusk, and more"
+msgstr "События включают восход, закат, рассвет, сумерки и другие"
+
+msgid "Static brightness"
+msgstr "Постоянная яркость"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Sun Fully Up"
+msgstr "Солнце полностью взошло"
+
+msgid "Sunrise"
+msgstr "Восход солнца"
+
+msgid "Sunrise: %s, Sunset: %s"
+msgstr "Восход: %s, Закат: %s"
+
+msgid "Sunset"
+msgstr "Закат"
+
+msgid "Sunset Begins"
+msgstr "Начало заката"
+
+msgid "Support for dual day/night wallpaper pairs and separate custom images"
+msgstr "Поддержка парных дневных/ночных обоев и отдельных пользовательских изображений"
+
+msgid "Switched to dark mode"
+msgstr "Включён тёмный режим"
+
+msgid "Switched to light mode"
+msgstr "Включён светлый режим"
+
+msgid "Sync Lock Screen Wallpaper"
+msgstr "Синхронизировать обои экрана блокировки"
+
+msgid "Sync with System Accent Color"
+msgstr "Синхронизировать с системным акцентным цветом"
+
+msgid "Sync with Theme"
+msgstr "Синхронизировать с темой"
+
+msgid "System day/night wallpapers with automatic smooth transition"
+msgstr "Системные темы обоев с плавным автоматическим переходом дня и ночи"
+
+msgid "Theme Settings"
+msgstr "Настройки тем"
+
+msgid "Theme Switch Timing"
+msgstr "Время переключения темы"
+
+msgid "Theme to use at night"
+msgstr "Тема для ночного времени"
+
+msgid "Theme to use during the day"
+msgstr "Тема для дневного времени"
+
+msgid "Time Until Next Switch"
+msgstr "До следующего переключения"
+
+msgid "Timezone"
+msgstr "Часовой пояс"
+
+msgid "Today"
+msgstr "Сегодня"
+
+msgid "Tomorrow"
+msgstr "Завтра"
+
+msgid "True Light Mode"
+msgstr "Полноценный светлый режим"
+
+msgid "Unable to detect your location. Please enter coordinates manually."
+msgstr "Не удалось определить местоположение. Пожалуйста, введите координаты вручную."
+
+msgid "Unknown Monitor"
+msgstr "Неизвестный монитор"
+
+msgid "Update all displayed values immediately"
+msgstr "Немедленно обновить все отображаемые значения"
+
+msgid "Upstream Project"
+msgstr "Исходный проект"
+
+msgid "Use prefer-light color scheme during daytime"
+msgstr "Использовать цветовую схему prefer-light в дневное время"
+
+msgid "Uses native Linux GeoClue2 service for coordinates"
+msgstr "Использует системную службу GeoClue2 для получения координат"
+
+msgid "View"
+msgstr "Посмотреть"
+
+msgid "Visit"
+msgstr "Перейти"
+
+msgid "Wallpaper Mode"
+msgstr "Режим смены обоев"
+
+msgid "Write verbose diagnostics to the system journal"
+msgstr "Записывать подробную диагностику в системный журнал"
+
+msgid "ddcutil-service Not Detected"
+msgstr "Служба ddcutil-service не обнаружена"
+
+msgid "suncalc Library"
+msgstr "Библиотека suncalc"

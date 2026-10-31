@@ -1,0 +1,250 @@
+#!/usr/bin/env -S gjs -m
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import system from 'system';
+
+import {
+    DBUS_INTERFACE_NAME,
+    DBUS_OBJECT_PATH,
+} from '../constants.js';
+import {
+    getAvailableDualWallpapers,
+    getAvailableGtkThemes,
+    getOptionalSettings,
+    inferThemePair,
+    settingsHasKey,
+} from '../themeUtils.js';
+import {
+    DdcServiceBackend,
+    MutterBacklightBackend,
+    PowerScreenBackend,
+} from '../displayController.js';
+import {BrightnessController} from '../brightnessController.js';
+import {ThemeController} from '../themeController.js';
+import {loadStandaloneSettings, runDaemonCli} from './novus-daynight-daemon.js';
+
+const DBUS_CANDIDATES = [
+    {bus: 'org.gnome.Shell', label: 'GNOME Shell Extension'},
+    {bus: 'fun.sgc_novus.NovusDayNight', label: 'Standalone Daemon'},
+];
+
+function resolvePaths() {
+    const scriptFile = Gio.File.new_for_uri(import.meta.url);
+    const standaloneDir = scriptFile.get_parent().get_path();
+    const rootDir = scriptFile.get_parent().get_parent().get_path();
+    return {standaloneDir, rootDir};
+}
+
+function callSingleBus(busName, method, variant) {
+    return new Promise((resolve, reject) => {
+        Gio.DBus.session.call(
+            busName,
+            DBUS_OBJECT_PATH,
+            DBUS_INTERFACE_NAME,
+            method,
+            variant,
+            null,
+            Gio.DBusCallFlags.NO_AUTO_START,
+            1000,
+            null,
+            (conn, res) => {
+                try {
+                    resolve(conn.call_finish(res));
+                } catch (e) {
+                    reject(e);
+                }
+            }
+        );
+    });
+}
+
+async function callActiveService(method, variant = null) {
+    for (const candidate of DBUS_CANDIDATES) {
+        try {
+            const reply = await callSingleBus(candidate.bus, method, variant);
+            return {ok: true, bus: candidate.bus, label: candidate.label, reply};
+        } catch {
+            // Try next candidate
+        }
+    }
+    return {ok: false, bus: null, label: null, reply: null};
+}
+
+async function cmdStatus(args, rootDir) {
+    const asJson = args.includes('--json');
+    const res = await callActiveService('GetDebugInfo');
+
+    if (res.ok && res.reply) {
+        const [raw] = res.reply.deep_unpack();
+        const info = JSON.parse(raw);
+        if (asJson) {
+            print(JSON.stringify({service: res.bus, ...info}, null, 2));
+            return 0;
+        }
+        const modeStr = info.manualModeActive
+            ? `Manual (${info.manualModeIsDark ? 'Night / Dark' : 'Day / Light'})`
+            : `Auto (${info.currentMode || 'N/A'})`;
+        print(`Novus DayNight — Active via ${res.label} (${res.bus})`);
+        print(`  Current Mode:       ${modeStr}`);
+        print(`  Light Switch Time:  ${info.lightTime || 'N/A'} (${info.lightModeTrigger || 'N/A'})`);
+        print(`  Dark Switch Time:   ${info.darkTime || 'N/A'} (${info.darkModeTrigger || 'N/A'})`);
+        if (!info.manualModeActive)
+            print(`  Next Switch:        ${info.nextEventType || 'N/A'} at ${info.nextEventTime || 'N/A'}`);
+        print(`  Location:           ${info.locationName || 'Not set'} (${info.latitude}, ${info.longitude})`);
+        print(`  Brightness Control: ${info.brightness?.enabled ? 'Enabled' : 'Disabled'}`);
+        return 0;
+    }
+
+    const settings = loadStandaloneSettings(rootDir);
+    const fallback = {
+        service: 'offline',
+        lightTheme: settings.get_string('light-theme'),
+        darkTheme: settings.get_string('dark-theme'),
+        manualModeActive: settings.get_boolean('manual-mode-active'),
+        manualModeIsDark: settings.get_boolean('manual-mode-is-dark'),
+        controlBrightness: settings.get_boolean('control-brightness'),
+    };
+    if (asJson) {
+        print(JSON.stringify(fallback, null, 2));
+    } else {
+        const manualLabel = fallback.manualModeActive
+            ? (fallback.manualModeIsDark ? 'Dark' : 'Light')
+            : 'Off';
+        print('Novus DayNight — Service Offline');
+        print(`  Light / Dark Theme: ${fallback.lightTheme} / ${fallback.darkTheme}`);
+        print(`  Manual Override:    ${manualLabel}`);
+    }
+    return 0;
+}
+
+async function cmdSwitchMode(mode, rootDir) {
+    if (mode === 'auto') {
+        const res = await callActiveService('ResetToAutomatic');
+        if (res.ok) {
+            print(`Returned to Automatic Schedule (${res.label}).`);
+            return 0;
+        }
+        const settings = loadStandaloneSettings(rootDir);
+        settings.set_boolean('manual-mode-active', false);
+        settings.set_boolean('manual-mode-is-dark', false);
+        return runDaemonCli(['--once']);
+    }
+
+    const isDark = mode === 'night';
+    const res = await callActiveService('ForceThemeSwitch', new GLib.Variant('(b)', [isDark]));
+    if (res.ok) {
+        print(`Switched to ${isDark ? 'Night (Dark)' : 'Day (Light)'} mode (${res.label}).`);
+        return 0;
+    }
+
+    const settings = loadStandaloneSettings(rootDir);
+    settings.set_boolean('manual-mode-active', true);
+    settings.set_boolean('manual-mode-is-dark', isDark);
+    const themeCtrl = new ThemeController(settings);
+    themeCtrl.initializeDefaultThemes();
+    themeCtrl.switchTheme(isDark, false, true);
+    const brightCtrl = new BrightnessController(settings);
+    await brightCtrl.applyManualBrightness(isDark);
+    brightCtrl.destroy();
+    themeCtrl.destroy();
+    print(`Applied ${isDark ? 'Night (Dark)' : 'Day (Light)'} mode directly.`);
+    return 0;
+}
+
+async function cmdDoctor(rootDir) {
+    const settings = loadStandaloneSettings(rootDir);
+    const themes = getAvailableGtkThemes();
+    const dualWps = getAvailableDualWallpapers();
+    const ifaceSettings = getOptionalSettings('org.gnome.desktop.interface');
+    const hasAccent = Boolean(ifaceSettings && settingsHasKey(ifaceSettings, 'accent-color'));
+    const activeService = await callActiveService('GetDebugInfo');
+
+    const mutterProbe = new MutterBacklightBackend(
+        {id: 'builtin', name: 'Built-in Display', type: 'mutter-dbus'},
+        settings
+    );
+    const powerProbe = new PowerScreenBackend(settings);
+    const [mutterOk, powerOk, ddcServiceOk] = await Promise.all([
+        mutterProbe.isAvailable(),
+        powerProbe.isAvailable(),
+        DdcServiceBackend.isServiceAvailable(),
+    ]);
+
+    const lightTheme = settings.get_string('light-theme');
+    const darkTheme = settings.get_string('dark-theme');
+    const suggestedPair = inferThemePair(lightTheme || 'Adwaita', themes);
+
+    const svcLabel = activeService.ok
+        ? `${activeService.label} (${activeService.bus})`
+        : 'Not running';
+
+    print('=== Novus DayNight Diagnostics ===');
+    print(`Active D-Bus Service: ${svcLabel}`);
+    print(`Valid GTK Themes:     ${themes.length} detected`);
+    print(`Configured Pair:      Light='${lightTheme}' / Dark='${darkTheme}'`);
+    if (lightTheme === darkTheme)
+        print(`Suggested Auto-Pair:  Light='${suggestedPair.light}' / Dark='${suggestedPair.dark}'`);
+    print(`System Accent Sync:   ${hasAccent ? 'Supported' : 'Not exposed'}`);
+    print(`Dual Wallpapers:      ${dualWps.length} verified XML pair(s)`);
+    print(`Mutter D-Bus:         ${mutterOk ? 'Ready' : 'Unavailable'}`);
+    print(`GSD Power D-Bus:      ${powerOk ? 'Ready' : 'Unavailable'}`);
+    print(`DdcutilService D-Bus: ${ddcServiceOk ? 'Ready' : 'Not installed (com.ddcutil.DdcutilService)'}`);
+    return 0;
+}
+
+function printHelp() {
+    print(`Novus DayNight — SGC-NOVUS
+Usage: novus-daynight <command> [options]
+
+Commands:
+  status [--json]             Show active mode, solar schedule, and brightness status
+  day | light                 Force Day (Light) theme, wallpaper, and brightness
+  night | dark                Force Night (Dark) theme, wallpaper, and brightness
+  auto | reset                Resume automatic solar/time schedule
+  prefs [--standalone-window] Open GTK4/Libadwaita Preferences UI
+  daemon [--force] [--once]   Run standalone background daemon
+  doctor                      Inspect themes and D-Bus display backends
+  help                        Show this help message`);
+}
+
+async function main(argv) {
+    const {rootDir} = resolvePaths();
+    const cmd = (argv[0] || 'status').toLowerCase();
+    const rest = argv.slice(1);
+
+    switch (cmd) {
+    case 'status':
+        return cmdStatus(rest, rootDir);
+    case 'day':
+    case 'light':
+        return cmdSwitchMode('day', rootDir);
+    case 'night':
+    case 'dark':
+        return cmdSwitchMode('night', rootDir);
+    case 'auto':
+    case 'reset':
+        return cmdSwitchMode('auto', rootDir);
+    case 'prefs':
+    case 'settings': {
+        const {runPrefsCli} = await import('./novus-daynight-prefs.js');
+        return runPrefsCli(rest);
+    }
+    case 'daemon':
+        return runDaemonCli(rest);
+    case 'doctor':
+    case 'diag':
+        return cmdDoctor(rootDir);
+    case 'help':
+    case '-h':
+    case '--help':
+        printHelp();
+        return 0;
+    default:
+        printerr(`Unknown command: ${cmd}\n`);
+        printHelp();
+        return 1;
+    }
+}
+
+const exitCode = await main(system.programArgs);
+system.exit(exitCode);

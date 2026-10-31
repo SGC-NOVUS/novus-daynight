@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.novus-daynight" path="/org/gnome/shell/extensions/novus-daynight/">
+
+    <key name="manual-latitude" type="s">
+      <default>''</default>
+      <summary>Latitude for solar calculations</summary>
+    </key>
+
+    <key name="manual-longitude" type="s">
+      <default>''</default>
+      <summary>Longitude for solar calculations</summary>
+    </key>
+
+    <key name="location-name" type="s">
+      <default>''</default>
+      <summary>Display name for the configured location</summary>
+    </key>
+
+    <key name="light-mode-trigger" type="s">
+      <default>'sunrise'</default>
+      <summary>Solar event or custom trigger for light mode</summary>
+    </key>
+
+    <key name="dark-mode-trigger" type="s">
+      <default>'sunset'</default>
+      <summary>Solar event or custom trigger for dark mode</summary>
+    </key>
+
+    <key name="custom-light-time" type="s">
+      <default>'07:00'</default>
+      <summary>Custom time (HH:MM) to switch to light mode</summary>
+    </key>
+
+    <key name="custom-dark-time" type="s">
+      <default>'19:00'</default>
+      <summary>Custom time (HH:MM) to switch to dark mode</summary>
+    </key>
+
+    <key name="light-theme" type="s">
+      <default>'Adwaita'</default>
+      <summary>GTK theme used during the day</summary>
+    </key>
+
+    <key name="dark-theme" type="s">
+      <default>'Adwaita-dark'</default>
+      <summary>GTK theme used at night</summary>
+    </key>
+
+    <key name="true-light-mode" type="b">
+      <default>false</default>
+      <summary>Use prefer-light color-scheme during daytime</summary>
+    </key>
+
+    <key name="sync-ubuntu-accent" type="b">
+      <default>true</default>
+      <summary>Sync Yaru theme pair with system accent color</summary>
+    </key>
+
+    <key name="show-quick-settings" type="b">
+      <default>true</default>
+      <summary>Show DayNight menu toggle in Quick Settings</summary>
+    </key>
+
+    <key name="show-notifications" type="b">
+      <default>true</default>
+      <summary>Show desktop notifications on automatic theme changes</summary>
+    </key>
+
+    <key name="wallpaper-mode" type="s">
+      <default>'disabled'</default>
+      <summary>Wallpaper switching mode (disabled, dual, or separate)</summary>
+    </key>
+
+    <key name="dual-wallpaper-name" type="s">
+      <default>''</default>
+      <summary>Name of the selected dual wallpaper pair</summary>
+    </key>
+
+    <key name="dual-wallpaper-light-uri" type="s">
+      <default>''</default>
+      <summary>Light image URI for dual wallpaper mode</summary>
+    </key>
+
+    <key name="dual-wallpaper-dark-uri" type="s">
+      <default>''</default>
+      <summary>Dark image URI for dual wallpaper mode</summary>
+    </key>
+
+    <key name="light-wallpaper-uri" type="s">
+      <default>''</default>
+      <summary>Wallpaper URI for light mode</summary>
+    </key>
+
+    <key name="dark-wallpaper-uri" type="s">
+      <default>''</default>
+      <summary>Wallpaper URI for dark mode</summary>
+    </key>
+
+    <key name="sync-lock-screen-wallpaper" type="b">
+      <default>true</default>
+      <summary>Synchronize lock screen wallpaper with desktop wallpaper</summary>
+    </key>
+
+    <key name="night-light-mode" type="s">
+      <default>'disabled'</default>
+      <summary>Night Light mode (disabled, sync-with-theme, follow-night-light, custom-schedule)</summary>
+    </key>
+
+    <key name="night-light-start-time" type="s">
+      <default>'20:00'</default>
+      <summary>Night Light custom start time (HH:MM)</summary>
+    </key>
+
+    <key name="night-light-end-time" type="s">
+      <default>'06:00'</default>
+      <summary>Night Light custom end time (HH:MM)</summary>
+    </key>
+
+    <key name="control-brightness" type="b">
+      <default>false</default>
+      <summary>Enable automatic display brightness management</summary>
+    </key>
+
+    <key name="gradual-brightness-decrease-enabled" type="b">
+      <default>false</default>
+      <summary>Gradually dim displays before dark mode</summary>
+    </key>
+
+    <key name="gradual-brightness-decrease-duration" type="i">
+      <default>7200</default>
+      <summary>Dimming window duration in seconds</summary>
+    </key>
+
+    <key name="gradual-brightness-increase-enabled" type="b">
+      <default>false</default>
+      <summary>Gradually brighten displays before light mode</summary>
+    </key>
+
+    <key name="gradual-brightness-increase-duration" type="i">
+      <default>7200</default>
+      <summary>Brightening window duration in seconds</summary>
+    </key>
+
+    <key name="monitors" type="s">
+      <default>'[]'</default>
+      <summary>JSON list of configured display brightness targets</summary>
+    </key>
+
+    <key name="monitors-last-detection" type="x">
+      <default>0</default>
+      <summary>Timestamp in milliseconds of last external display scan</summary>
+    </key>
+
+    <key name="last-brightness-update" type="s">
+      <default>'0'</default>
+      <summary>Timestamp in milliseconds of last brightness update</summary>
+    </key>
+
+    <key name="last-auto-mode" type="s">
+      <default>''</default>
+      <summary>Last automatically applied period (day or night)</summary>
+    </key>
+
+    <key name="manual-mode-active" type="b">
+      <default>false</default>
+      <summary>Whether manual mode override is active</summary>
+    </key>
+
+    <key name="manual-mode-is-dark" type="b">
+      <default>false</default>
+      <summary>Whether manual mode override selected dark mode</summary>
+    </key>
+
+    <key name="debug-logging" type="b">
+      <default>false</default>
+      <summary>Write diagnostic messages to the system journal</summary>
+    </key>
+
+  </schema>
+</schemalist>

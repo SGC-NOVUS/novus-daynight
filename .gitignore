@@ -1,0 +1,18 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# GNOME Shell & Debian compiled schemas / packages
+schemas/gschemas.compiled
+*.zip
+*.tar.gz
+*.deb
+dist/
+
+# Temporary / editor files
+*~
+*.swp
+.DS_Store
+.vscode/
+.idea/
