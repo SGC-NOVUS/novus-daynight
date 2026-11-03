@@ -12,6 +12,7 @@ import {
 } from '../constants.js';
 import {BrightnessController} from '../brightnessController.js';
 import {ThemeController} from '../themeController.js';
+import {PowerController} from '../powerController.js';
 import {SolarCalculator} from '../solarCalculator.js';
 import {TimeCalculator, resolveScheduleState, secondsUntilEvent} from '../timeCalculator.js';
 import {debugLog, debugWarn, setDebugLogging} from '../logger.js';
@@ -79,7 +80,7 @@ function sendDesktopNotification(title, body, iconName = 'preferences-desktop-th
         'org.freedesktop.Notifications',
         'Notify',
         new GLib.Variant('(susssasa{sv}i)', [
-            'Novus DayNight',
+            'SGC-NOVUS Tools',
             0,
             iconName,
             title,
@@ -160,8 +161,21 @@ class StandaloneDaemon {
             onApplied: syncXfconfOverDBus,
             gettext: this._,
         });
+        this._powerController = new PowerController(this._settings);
         this._solarCalculator = new SolarCalculator();
         this._timeCalculator = new TimeCalculator();
+    }
+
+    _applyScheduledPowerProfile(isDark) {
+        if (!this._settings || !this._settings.get_boolean('auto-power-profile-schedule'))
+            return;
+
+        const targetProfile = isDark
+            ? this._settings.get_string('dark-power-profile')
+            : this._settings.get_string('light-power-profile');
+
+        if (targetProfile && this._powerController?.isAvailable())
+            this._powerController.setActiveProfile(targetProfile);
     }
 
     async start({once = false} = {}) {
@@ -198,6 +212,7 @@ class StandaloneDaemon {
         const {inDayPeriod} = resolveScheduleState(now, lightTime, darkTime);
         const isDark = !inDayPeriod;
         this._themeController.switchTheme(isDark, false, false);
+        this._applyScheduledPowerProfile(isDark);
         await this._brightnessController.updateBrightness(true);
         this._storeDebugInfo(now, lightTime, darkTime, lightModeTrigger, darkModeTrigger, solarTimes);
     }
@@ -359,6 +374,7 @@ class StandaloneDaemon {
         const isDarkNow = !inDayPeriod;
 
         this._themeController.switchTheme(isDarkNow, true, false);
+        this._applyScheduledPowerProfile(isDarkNow);
         if (!this._brightnessController.isInTransitionWindow()) {
             this._brightnessController.updateBrightness(true).catch(e => {
                 debugWarn('StandaloneDaemon: Initial brightness update failed:', e);
@@ -383,6 +399,7 @@ class StandaloneDaemon {
                 if (this._manualModeActive)
                     return GLib.SOURCE_REMOVE;
                 this._themeController.switchTheme(switchToDark, true, false);
+                this._applyScheduledPowerProfile(switchToDark);
                 this._brightnessController.updateBrightness(true).catch(() => {});
                 this._scheduleNextChangeEvent();
                 return GLib.SOURCE_REMOVE;
@@ -511,6 +528,7 @@ class StandaloneDaemon {
         }
 
         this._themeController.switchTheme(isDark, false, true);
+        this._applyScheduledPowerProfile(isDark);
         this._brightnessController.applyManualBrightness(isDark).catch(e => {
             debugWarn('StandaloneDaemon: Failed to apply manual brightness:', e);
         });
@@ -550,6 +568,8 @@ class StandaloneDaemon {
         }
         this._brightnessController?.destroy();
         this._themeController?.destroy();
+        this._powerController?.destroy();
+        this._powerController = null;
     }
 }
 
@@ -574,7 +594,7 @@ export async function runDaemonCli(argv) {
     }
 
     await daemon.start({once: false});
-    print('Novus DayNight standalone daemon running (D-Bus: fun.sgc_novus.NovusDayNight)');
+    print('SGC-NOVUS Tools standalone daemon running (D-Bus: fun.sgc_novus.NovusDayNight)');
 
     return new Promise(resolve => {
         const shutdown = () => {

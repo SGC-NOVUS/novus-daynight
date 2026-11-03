@@ -1,11 +1,12 @@
 import glob
 import os
 import re
+import shutil
 import struct
+import subprocess
 
 
 def parse_po(file_path):
-    """Parse a GNU gettext PO file into a dictionary."""
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
@@ -29,13 +30,14 @@ def parse_po(file_path):
     for match in pattern.finditer(content):
         msgid = extract_str(match.group(1))
         msgstr = extract_str(match.group(2))
-        entries[msgid] = msgstr
+        if msgid:
+            entries[msgid] = msgstr
 
     return entries
 
 
 def make_mo(catalog):
-    """Compile a translation dictionary into binary GNU gettext MO format."""
+    # Sort keys by byte value (standard gettext MO requirement)
     keys = sorted(catalog.keys(), key=lambda k: k.encode('utf-8'))
     num_strings = len(keys)
     header_size = 28
@@ -79,6 +81,7 @@ def compile_all():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     po_dir = os.path.join(base_dir, 'po')
     locale_dir = os.path.join(base_dir, 'locale')
+    has_msgfmt = shutil.which('msgfmt') is not None
 
     po_files = sorted(glob.glob(os.path.join(po_dir, '*.po')))
     if not po_files:
@@ -87,16 +90,21 @@ def compile_all():
 
     for po_file in po_files:
         lang = os.path.splitext(os.path.basename(po_file))[0]
-        catalog = parse_po(po_file)
-        mo_data = make_mo(catalog)
-
         target_dir = os.path.join(locale_dir, lang, 'LC_MESSAGES')
         os.makedirs(target_dir, exist_ok=True)
-
         mo_path = os.path.join(target_dir, 'novus-daynight.mo')
+
+        if has_msgfmt:
+            res = subprocess.run(['msgfmt', '-c', '-o', mo_path, po_file], capture_output=True, text=True)
+            if res.returncode == 0:
+                print(f'Compiled [{lang}] via msgfmt -> {mo_path}')
+                continue
+            print(f'msgfmt failed for [{lang}]: {res.stderr}, falling back to python')
+
+        catalog = parse_po(po_file)
+        mo_data = make_mo(catalog)
         with open(mo_path, 'wb') as f:
             f.write(mo_data)
-
         print(f'Compiled [{lang}]: {len(catalog)} strings -> {mo_path}')
 
 

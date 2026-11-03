@@ -16,7 +16,7 @@ const ExtensionDBusIface = `
     </interface>
 </node>`;
 
-export default class NovusDayNightExtension extends Extension {
+export default class SGCNovusToolsExtension extends Extension {
     enable() {
         this._controller = new ExtensionController(this);
         this._controller.enable();

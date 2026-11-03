@@ -65,7 +65,7 @@ function readMetadata(rootDir) {
     }
     return {
         uuid: UUID,
-        name: 'Novus DayNight',
+        name: 'SGC-NOVUS Tools',
         'gettext-domain': 'novus-daynight',
         'settings-schema': 'org.gnome.shell.extensions.novus-daynight',
         path: rootDir,
@@ -86,6 +86,7 @@ function stageStandalonePrefsModule(rootDir, standaloneDir) {
         'prefs.js',
         'prefs/appearancePage.js',
         'prefs/schedulePage.js',
+        'prefs/powerPage.js',
         'prefs/brightnessPage.js',
         'prefs/statusPage.js',
         'prefs/aboutPage.js',
@@ -110,6 +111,8 @@ function stageStandalonePrefsModule(rootDir, standaloneDir) {
 
     const linkFiles = [
         'constants.js',
+        'powerController.js',
+        'swapHibernateController.js',
         'themeUtils.js',
         'displayController.js',
         'logger.js',

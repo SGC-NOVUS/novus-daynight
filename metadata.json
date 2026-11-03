@@ -1,7 +1,7 @@
 {
   "uuid": "NDN@sgc-novus.fun",
-  "name": "Novus DayNight",
-  "description": "Automatically switches GTK themes, color scheme, wallpapers, Night Light, and display brightness based on local sunrise/sunset times or a custom schedule.\n\nOptional location auto-detection uses GeoClue2 with fallback to ipinfo.io and nominatim.openstreetmap.org.\n\nBased on Automatic Theme Switcher by Amritashan S. Lal.",
+  "name": "SGC-NOVUS Tools",
+  "description": "Complete desktop automation and power management suite for GNOME Shell: solar-based Day/Night theme and wallpaper switching, smooth display brightness, Night Light sync, and quick D-Bus Power Profile switching (Performance, Balanced, Power Saver).\n\nDeveloped by SGC-NOVUS.",
   "shell-version": [
     "45",
     "46",

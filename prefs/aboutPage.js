@@ -51,7 +51,7 @@ export function createAboutPage(metadata) {
     }));
 
     heroBox.append(new Gtk.Label({
-        label: metadata.name || 'Novus DayNight',
+        label: metadata.name || 'SGC-NOVUS Tools',
         wrap: true,
         wrap_mode: Pango.WrapMode.WORD_CHAR,
         justify: Gtk.Justification.CENTER,
@@ -74,8 +74,8 @@ export function createAboutPage(metadata) {
 
     heroBox.append(new Gtk.Label({
         label: _(
-            'Automatic light and dark theme switching based on sunrise/sunset ' +
-            'with smooth display brightness control.'
+            'Complete GNOME desktop automation: Day/Night theme switching, ' +
+            'display brightness, Night Light sync, and Power Profile switching.'
         ),
         wrap: true,
         wrap_mode: Pango.WrapMode.WORD_CHAR,
@@ -143,15 +143,6 @@ export function createAboutPage(metadata) {
     });
     licenseRow.add_prefix(new Gtk.Image({icon_name: 'emblem-favorite-symbolic'}));
     creditsGroup.add(licenseRow);
-
-    addLinkRow(
-        creditsGroup,
-        _('Upstream Project'),
-        'https://github.com/amritashan/auto-theme-switcher',
-        _('View'),
-        null,
-        _('Based on Automatic Theme Switcher by Amritashan S. Lal (GPL-3.0)')
-    );
 
     addLinkRow(
         creditsGroup,

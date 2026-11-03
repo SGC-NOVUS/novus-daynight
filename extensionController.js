@@ -5,6 +5,8 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 import {MS_PER_SECOND, RESUME_DELAY_SECONDS} from './constants.js';
 import {BrightnessController} from './brightnessController.js';
 import {ThemeController} from './themeController.js';
+import {PowerController, POWER_PROFILE_POWER_SAVER} from './powerController.js';
+import {SwapHibernateController} from './swapHibernateController.js';
 import {SolarCalculator} from './solarCalculator.js';
 import {TimeCalculator, resolveScheduleState, secondsUntilEvent} from './timeCalculator.js';
 import {NovusQuickSettingsIndicator} from './quickSettingsIndicator.js';
@@ -44,8 +46,72 @@ export class ExtensionController {
             notify: (title, body) => Main.notify(title, body),
             gettext: _,
         });
+        this._powerController = new PowerController(this._settings);
+        this._swapHibernateController = new SwapHibernateController(this._settings);
+        this._powerListenerRemover = this._powerController.addChangeListener(state => {
+            this._quickIndicator?.syncState();
+            this._handleOledDarkSync(state.activeProfile);
+            this._handleCriticalBattery(state);
+        });
         this._solarCalculator = new SolarCalculator();
         this._timeCalculator = new TimeCalculator();
+    }
+
+    getPowerController() {
+        return this._powerController;
+    }
+
+    getSwapHibernateController() {
+        return this._swapHibernateController;
+    }
+
+    getSettings() {
+        return this._settings;
+    }
+
+    _handleCriticalBattery(state) {
+        if (!this._settings || !this._settings.get_boolean('power-critical-battery-hibernate'))
+            return;
+
+        if (!state.hasBattery || !state.onBattery)
+            return;
+
+        const threshold = this._settings.get_int('power-critical-battery-threshold');
+        if (state.batteryPercentage <= threshold) {
+            if (this._swapHibernateController?.canHibernate()) {
+                debugWarn(`ExtensionController: Critical battery ${state.batteryPercentage}% -> Hibernating`);
+                this._swapHibernateController.hibernate(false);
+            }
+        }
+    }
+
+    _handleOledDarkSync(activeProfile) {
+        if (!this._settings || !this._settings.get_boolean('power-sync-oled-dark'))
+            return;
+
+        if (this._manualModeActive)
+            return;
+
+        const isSaver = activeProfile === POWER_PROFILE_POWER_SAVER;
+        if (isSaver && !this.isCurrentlyDark()) {
+            this._themeController.switchTheme(true, true, false);
+            this._quickIndicator?.syncState();
+        } else if (!isSaver && this._settings.get_string('last-auto-mode') === 'day' && this.isCurrentlyDark()) {
+            this._themeController.switchTheme(false, true, false);
+            this._quickIndicator?.syncState();
+        }
+    }
+
+    _applyScheduledPowerProfile(isDark) {
+        if (!this._settings || !this._settings.get_boolean('auto-power-profile-schedule'))
+            return;
+
+        const targetProfile = isDark
+            ? this._settings.get_string('dark-power-profile')
+            : this._settings.get_string('light-power-profile');
+
+        if (targetProfile && this._powerController?.isAvailable())
+            this._powerController.setActiveProfile(targetProfile);
     }
 
     enable() {
@@ -57,6 +123,7 @@ export class ExtensionController {
 
         if (this._manualModeActive) {
             this._themeController.switchTheme(this._manualModeIsDark, false, true);
+            this._applyScheduledPowerProfile(this._manualModeIsDark);
             this._updateQuickSettingsIndicator();
             return;
         }
@@ -158,6 +225,26 @@ export class ExtensionController {
 
         this._settingsSignalIds.push(this._settings.connect('changed::show-quick-settings', () => {
             this._updateQuickSettingsIndicator();
+        }));
+
+        this._settingsSignalIds.push(this._settings.connect('changed::enable-power-profiles', () => {
+            this._quickIndicator?.syncState();
+        }));
+
+        this._settingsSignalIds.push(this._settings.connect('changed::auto-power-profile-schedule', () => {
+            if (this._settings.get_boolean('auto-power-profile-schedule'))
+                this._applyScheduledPowerProfile(this.isCurrentlyDark());
+            this._quickIndicator?.syncState();
+        }));
+
+        this._settingsSignalIds.push(this._settings.connect('changed::light-power-profile', () => {
+            if (this._settings.get_boolean('auto-power-profile-schedule') && !this.isCurrentlyDark())
+                this._applyScheduledPowerProfile(false);
+        }));
+
+        this._settingsSignalIds.push(this._settings.connect('changed::dark-power-profile', () => {
+            if (this._settings.get_boolean('auto-power-profile-schedule') && this.isCurrentlyDark())
+                this._applyScheduledPowerProfile(true);
         }));
 
         this._settingsSignalIds.push(this._settings.connect('changed::true-light-mode', () => {
@@ -284,6 +371,7 @@ export class ExtensionController {
 
         this._clearScheduleTimer();
         this._themeController.switchTheme(isDark, false, true);
+        this._applyScheduledPowerProfile(isDark);
         this._quickIndicator?.syncState();
 
         this._brightnessController.applyManualBrightness(isDark).catch(e => {
@@ -389,6 +477,8 @@ export class ExtensionController {
             this._settings.set_string('last-auto-mode', currentPeriod);
 
         this._themeController.switchTheme(isDarkNow, periodChanged, false);
+        if (periodChanged)
+            this._applyScheduledPowerProfile(isDarkNow);
 
         if (periodChanged && !this._brightnessController.isInTransitionWindow()) {
             this._brightnessController.updateBrightness(true).catch(e => {
@@ -421,6 +511,7 @@ export class ExtensionController {
                 const nextPeriod = switchToDark ? 'night' : 'day';
                 this._settings.set_string('last-auto-mode', nextPeriod);
                 this._themeController.switchTheme(switchToDark, true, false);
+                this._applyScheduledPowerProfile(switchToDark);
                 this._brightnessController.updateBrightness(true).catch(e => {
                     debugWarn('NovusDayNight: Scheduled brightness update error:', e);
                 });
@@ -645,6 +736,21 @@ export class ExtensionController {
             this._colorProxyPropId = null;
         }
         this._colorProxy = null;
+
+        if (this._powerListenerRemover) {
+            this._powerListenerRemover();
+            this._powerListenerRemover = null;
+        }
+
+        if (this._powerController) {
+            this._powerController.destroy();
+            this._powerController = null;
+        }
+
+        if (this._swapHibernateController) {
+            this._swapHibernateController.destroy();
+            this._swapHibernateController = null;
+        }
 
         this._brightnessController?.destroy();
         this._brightnessController = null;

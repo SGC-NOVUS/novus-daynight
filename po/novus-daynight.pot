@@ -98,9 +98,6 @@ msgstr ""
 msgid "Background Service Offline"
 msgstr ""
 
-msgid "Based on Automatic Theme Switcher by Amritashan S. Lal (GPL-3.0)"
-msgstr ""
-
 msgid "Brightness"
 msgstr ""
 

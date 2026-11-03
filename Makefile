@@ -21,6 +21,8 @@ EXTENSION_FILES = \
 	themeUtils.js \
 	displayController.js \
 	brightnessController.js \
+	powerController.js \
+	swapHibernateController.js \
 	themeController.js \
 	quickSettingsIndicator.js \
 	extensionController.js \

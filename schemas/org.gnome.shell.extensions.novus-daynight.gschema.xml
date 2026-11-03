@@ -177,5 +177,95 @@
       <summary>Write diagnostic messages to the system journal</summary>
     </key>
 
+    <key name="enable-power-profiles" type="b">
+      <default>true</default>
+      <summary>Enable power profiles management in quick settings</summary>
+    </key>
+
+    <key name="auto-power-profile-schedule" type="b">
+      <default>false</default>
+      <summary>Automatically switch power profiles based on day/night schedule</summary>
+    </key>
+
+    <key name="light-power-profile" type="s">
+      <default>'balanced'</default>
+      <summary>Power profile to use during day mode (performance, balanced, power-saver)</summary>
+    </key>
+
+    <key name="dark-power-profile" type="s">
+      <default>'power-saver'</default>
+      <summary>Power profile to use during night mode (performance, balanced, power-saver)</summary>
+    </key>
+
+    <key name="power-scenarios-enabled" type="b">
+      <default>false</default>
+      <summary>Enable intelligent power scenarios (AC/Battery, thresholds, timeouts)</summary>
+    </key>
+
+    <key name="power-ac-profile" type="s">
+      <default>'performance'</default>
+      <summary>Power profile when connected to AC power (performance, balanced, power-saver, or keep)</summary>
+    </key>
+
+    <key name="power-battery-profile" type="s">
+      <default>'balanced'</default>
+      <summary>Power profile when running on battery (performance, balanced, power-saver, or keep)</summary>
+    </key>
+
+    <key name="power-low-battery-enabled" type="b">
+      <default>true</default>
+      <summary>Automatically switch to power-saver when battery reaches low threshold</summary>
+    </key>
+
+    <key name="power-low-battery-threshold" type="i">
+      <default>20</default>
+      <summary>Battery percentage threshold to trigger power-saver</summary>
+    </key>
+
+    <key name="power-sync-oled-dark" type="b">
+      <default>false</default>
+      <summary>Force dark color scheme when power-saver profile is active to reduce OLED/battery consumption</summary>
+    </key>
+
+    <key name="power-profile-screen-timeouts" type="b">
+      <default>false</default>
+      <summary>Automatically adjust screen blank inactivity delay per power scenario</summary>
+    </key>
+
+    <key name="power-screen-timeout-ac" type="i">
+      <default>900</default>
+      <summary>Screen blank inactivity timeout in seconds when on AC power</summary>
+    </key>
+
+    <key name="power-screen-timeout-battery" type="i">
+      <default>300</default>
+      <summary>Screen blank inactivity timeout in seconds when on battery</summary>
+    </key>
+
+    <key name="power-screen-timeout-saver" type="i">
+      <default>120</default>
+      <summary>Screen blank inactivity timeout in seconds when in power-saver mode</summary>
+    </key>
+
+    <key name="power-critical-battery-hibernate" type="b">
+      <default>false</default>
+      <summary>Automatically hibernate system when battery reaches critical threshold</summary>
+    </key>
+
+    <key name="power-critical-battery-threshold" type="i">
+      <default>5</default>
+      <summary>Critical battery percentage to trigger hibernation or emergency suspend</summary>
+    </key>
+
+    <key name="show-quick-hibernate" type="b">
+      <default>true</default>
+      <summary>Show Hibernate action button in Quick Settings menu</summary>
+    </key>
+
+    <key name="show-quick-suspend" type="b">
+      <default>false</default>
+      <summary>Show Suspend action button in Quick Settings menu</summary>
+    </key>
+
   </schema>
 </schemalist>

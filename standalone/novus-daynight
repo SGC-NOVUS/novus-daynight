@@ -19,6 +19,12 @@ import {
     MutterBacklightBackend,
     PowerScreenBackend,
 } from '../displayController.js';
+import {
+    PowerController,
+    POWER_PROFILE_BALANCED,
+    POWER_PROFILE_PERFORMANCE,
+    POWER_PROFILE_POWER_SAVER,
+} from '../powerController.js';
 import {BrightnessController} from '../brightnessController.js';
 import {ThemeController} from '../themeController.js';
 import {loadStandaloneSettings, runDaemonCli} from './novus-daynight-daemon.js';
@@ -84,7 +90,7 @@ async function cmdStatus(args, rootDir) {
         const modeStr = info.manualModeActive
             ? `Manual (${info.manualModeIsDark ? 'Night / Dark' : 'Day / Light'})`
             : `Auto (${info.currentMode || 'N/A'})`;
-        print(`Novus DayNight — Active via ${res.label} (${res.bus})`);
+        print(`SGC-NOVUS Tools — Active via ${res.label} (${res.bus})`);
         print(`  Current Mode:       ${modeStr}`);
         print(`  Light Switch Time:  ${info.lightTime || 'N/A'} (${info.lightModeTrigger || 'N/A'})`);
         print(`  Dark Switch Time:   ${info.darkTime || 'N/A'} (${info.darkModeTrigger || 'N/A'})`);
@@ -110,7 +116,7 @@ async function cmdStatus(args, rootDir) {
         const manualLabel = fallback.manualModeActive
             ? (fallback.manualModeIsDark ? 'Dark' : 'Light')
             : 'Off';
-        print('Novus DayNight — Service Offline');
+        print('SGC-NOVUS Tools — Service Offline');
         print(`  Light / Dark Theme: ${fallback.lightTheme} / ${fallback.darkTheme}`);
         print(`  Manual Override:    ${manualLabel}`);
     }
@@ -159,6 +165,11 @@ async function cmdDoctor(rootDir) {
     const hasAccent = Boolean(ifaceSettings && settingsHasKey(ifaceSettings, 'accent-color'));
     const activeService = await callActiveService('GetDebugInfo');
 
+    const pc = new PowerController(settings);
+    await new Promise(r => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => { r(); return GLib.SOURCE_REMOVE; }));
+    const powerProfilesOk = pc.isAvailable();
+    pc.destroy();
+
     const mutterProbe = new MutterBacklightBackend(
         {id: 'builtin', name: 'Built-in Display', type: 'mutter-dbus'},
         settings
@@ -178,8 +189,9 @@ async function cmdDoctor(rootDir) {
         ? `${activeService.label} (${activeService.bus})`
         : 'Not running';
 
-    print('=== Novus DayNight Diagnostics ===');
+    print('=== SGC-NOVUS Tools Diagnostics ===');
     print(`Active D-Bus Service: ${svcLabel}`);
+    print(`Power Profiles D-Bus: ${powerProfilesOk ? 'Ready (net.hadess.PowerProfiles)' : 'Unavailable'}`);
     print(`Valid GTK Themes:     ${themes.length} detected`);
     print(`Configured Pair:      Light='${lightTheme}' / Dark='${darkTheme}'`);
     if (lightTheme === darkTheme)
@@ -192,8 +204,47 @@ async function cmdDoctor(rootDir) {
     return 0;
 }
 
+async function cmdPower(args, rootDir) {
+    const settings = loadStandaloneSettings(rootDir);
+    const pc = new PowerController(settings);
+    await new Promise(r => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => { r(); return GLib.SOURCE_REMOVE; }));
+
+    if (!pc.isAvailable()) {
+        printerr('Power Profiles D-Bus service (org.freedesktop.UPower.PowerProfiles) is not available.');
+        pc.destroy();
+        return 1;
+    }
+
+    const sub = (args[0] || '').toLowerCase();
+    if (!sub) {
+        print(`Active Power Profile: ${pc.getActiveProfile()}`);
+        print(`Available Profiles:   ${pc.getAvailableProfiles().join(', ')}`);
+        pc.destroy();
+        return 0;
+    }
+
+    let target = null;
+    if (['perf', 'performance', 'max'].includes(sub))
+        target = POWER_PROFILE_PERFORMANCE;
+    else if (['bal', 'balanced', 'default'].includes(sub))
+        target = POWER_PROFILE_BALANCED;
+    else if (['save', 'saver', 'power-saver', 'min'].includes(sub))
+        target = POWER_PROFILE_POWER_SAVER;
+    else {
+        printerr(`Unknown profile: ${sub}. Supported: performance, balanced, power-saver`);
+        pc.destroy();
+        return 1;
+    }
+
+    pc.setActiveProfile(target);
+    await new Promise(r => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => { r(); return GLib.SOURCE_REMOVE; }));
+    print(`Power profile set to: ${pc.getActiveProfile()}`);
+    pc.destroy();
+    return 0;
+}
+
 function printHelp() {
-    print(`Novus DayNight — SGC-NOVUS
+    print(`SGC-NOVUS Tools — SGC-NOVUS (https://sgc-novus.fun)
 Usage: novus-daynight <command> [options]
 
 Commands:
@@ -201,9 +252,10 @@ Commands:
   day | light                 Force Day (Light) theme, wallpaper, and brightness
   night | dark                Force Night (Dark) theme, wallpaper, and brightness
   auto | reset                Resume automatic solar/time schedule
+  power [perf|bal|saver]      Get or set energy profile (performance, balanced, power-saver)
   prefs [--standalone-window] Open GTK4/Libadwaita Preferences UI
   daemon [--force] [--once]   Run standalone background daemon
-  doctor                      Inspect themes and D-Bus display backends
+  doctor                      Inspect themes, D-Bus display and power backends
   help                        Show this help message`);
 }
 
@@ -224,6 +276,9 @@ async function main(argv) {
     case 'auto':
     case 'reset':
         return cmdSwitchMode('auto', rootDir);
+    case 'power':
+    case 'profile':
+        return cmdPower(rest, rootDir);
     case 'prefs':
     case 'settings': {
         const {runPrefsCli} = await import('./novus-daynight-prefs.js');

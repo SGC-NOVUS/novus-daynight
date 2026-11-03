@@ -41,6 +41,8 @@ CORE_MODULES=(
     themeUtils.js
     displayController.js
     brightnessController.js
+    powerController.js
+    swapHibernateController.js
     themeController.js
     solarCalculator.js
     timeCalculator.js
@@ -98,27 +100,27 @@ chmod 0755 "${PKG_ROOT}/usr/bin/novus-daynight"
 cat > "${PKG_ROOT}/usr/share/applications/fun.sgc_novus.NovusDayNight.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
-Name=Novus DayNight
-Name[ru]=Novus DayNight (День/Ночь)
-Name[uk]=Novus DayNight (День/Ніч)
-Comment=Automatic day/night theme, wallpaper, and screen brightness switcher
-Comment[ru]=Автоматическое переключение светлой/тёмной темы, обоев и яркости экранов
-Comment[uk]=Автоматичне перемикання світлої/темної теми, шпалер та яскравості екранів
+Name=SGC-NOVUS Tools
+Name[ru]=SGC-NOVUS Tools (Инструменты SGC-NOVUS)
+Name[uk]=SGC-NOVUS Tools (Інструменти SGC-NOVUS)
+Comment=Desktop environment, display, and power profiles automation suite
+Comment[ru]=Комплексная автоматизация тем, экранов и профилей энергопотребления
+Comment[uk]=Комплексна автоматизація тем, екранів та профілів енергоспоживання
 Exec=/usr/bin/novus-daynight prefs
 Icon=preferences-desktop-theme
 Terminal=false
 Categories=Settings;DesktopSettings;GTK;
-Keywords=theme;dark;light;night;brightness;solar;wallpaper;gnome;
+Keywords=theme;dark;light;night;brightness;solar;wallpaper;gnome;power;battery;
 StartupNotify=true
 EOF
 
 cat > "${PKG_ROOT}/etc/xdg/autostart/fun.sgc_novus.NovusDayNight.Daemon.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
-Name=Novus DayNight Background Daemon
-Name[ru]=Фоновая служба Novus DayNight
-Name[uk]=Фонова служба Novus DayNight
-Comment=Automatic solar theme, wallpaper, and brightness daemon
+Name=SGC-NOVUS Tools Background Daemon
+Name[ru]=Фоновая служба SGC-NOVUS Tools
+Name[uk]=Фонова служба SGC-NOVUS Tools
+Comment=Desktop environment, display, and power automation daemon
 Exec=/usr/bin/novus-daynight daemon
 Icon=preferences-desktop-theme
 Terminal=false
@@ -158,10 +160,10 @@ Recommends: gir1.2-soup-3.0, gir1.2-geoclue-2.0
 Suggests: gnome-shell (>= 45), ddcutil-service
 Maintainer: SGC-NOVUS (System Generations Core Novus) <support@sgc-novus.fun>
 Homepage: https://github.com/SGC-NOVUS/novus-daynight
-Description: Automatic solar day/night theme, wallpaper & brightness switcher
- Novus DayNight automatically switches GTK/GNOME themes, dynamic wallpapers,
- Night Light, and display brightness over D-Bus based on local sunrise/sunset
- calculations or a custom schedule.
+Description: Desktop environment, display, and power profiles automation suite
+ SGC-NOVUS Tools seamlessly coordinates day/night theme transitions,
+ dynamic wallpapers, Night Light synchronization, smooth display brightness
+ over D-Bus, and smart power profiles management (AC/Battery scenarios).
 EOF
 
 cat > "${PKG_ROOT}/DEBIAN/conffiles" <<'EOF'

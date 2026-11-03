@@ -99,9 +99,6 @@ msgstr "Автоматически переключать светлый и тё
 msgid "Background Service Offline"
 msgstr "Фоновая служба не запущена"
 
-msgid "Based on Automatic Theme Switcher by Amritashan S. Lal (GPL-3.0)"
-msgstr "Основано на Automatic Theme Switcher от Amritashan S. Lal (GPL-3.0)"
-
 msgid "Brightness"
 msgstr "Яркость"
 
@@ -785,3 +782,384 @@ msgstr "Служба ddcutil-service не обнаружена"
 
 msgid "suncalc Library"
 msgstr "Библиотека suncalc"
+
+msgid "SGC-NOVUS"
+msgstr "SGC-NOVUS"
+
+msgid "SGC-NOVUS Tools"
+msgstr "SGC-NOVUS Tools"
+
+msgid "SGC-NOVUS Settings…"
+msgstr "Настройки SGC-NOVUS…"
+
+msgid "Theme, display & power management"
+msgstr "Управление темами, экранами и питанием"
+
+msgid "Power Profile"
+msgstr "Профиль энергопотребления"
+
+msgid "Performance"
+msgstr "Максимальная производительность"
+
+msgid "Balanced"
+msgstr "Сбалансированно"
+
+msgid "Power Saver"
+msgstr "Максимальное энергосбережение"
+
+msgid "Power"
+msgstr "Энергопотребление"
+
+msgid "Quick Settings Menu"
+msgstr "Меню быстрых настроек"
+
+msgid "Manage how power options appear in the GNOME Quick Settings panel."
+msgstr "Управление отображением настроек питания в панели быстрых настроек GNOME."
+
+msgid "Show Power Profiles in Quick Settings"
+msgstr "Показывать профили в меню быстрых настроек"
+
+msgid "Display Performance, Balanced, and Power Saver buttons in the menu"
+msgstr "Отображать кнопки производительности, баланса и энергосбережения в меню"
+
+msgid "Schedule Automation"
+msgstr "Автоматизация по расписанию"
+
+msgid "Automatically adjust system energy usage according to day and night periods."
+msgstr "Автоматически настраивать энергопотребление в соответствии с дневным и ночным периодами."
+
+msgid "Automate Power Profiles"
+msgstr "Автопереключение профилей питания"
+
+msgid "Switch power profiles automatically when Day or Night mode activates"
+msgstr "Автоматически переключать профили питания при смене дня и ночи"
+
+msgid "Day Mode Profile"
+msgstr "Профиль для дневного режима"
+
+msgid "Energy profile to apply during daytime"
+msgstr "Профиль питания, применяемый в дневное время"
+
+msgid "Night Mode Profile"
+msgstr "Профиль для ночного режима"
+
+msgid "Energy profile to apply during nighttime"
+msgstr "Профиль питания, применяемый в ночное время"
+
+msgid "System D-Bus Status"
+msgstr "Статус системного D-Bus"
+
+msgid "Live connection to org.freedesktop.UPower.PowerProfiles daemon."
+msgstr "Подключение к службе org.freedesktop.UPower.PowerProfiles."
+
+msgid "Daemon Status"
+msgstr "Статус службы"
+
+msgid "Current Active Profile"
+msgstr "Текущий активный профиль"
+
+msgid "Connected (power-profiles-daemon active via D-Bus)"
+msgstr "Подключено (power-profiles-daemon активен через D-Bus)"
+
+msgid "Service unavailable or daemon not installed"
+msgstr "Служба недоступна или демон не установлен"
+
+msgid "Performance (Maximum Power)"
+msgstr "Максимальная производительность"
+
+msgid "Power Saver (Maximum Battery Life)"
+msgstr "Максимальное энергосбережение"
+
+msgid "Complete GNOME desktop automation: Day/Night theme switching, display brightness, Night Light sync, and Power Profile switching."
+msgstr "Комплексная автоматизация окружения GNOME: переключение темы День/Ночь, яркость экранов, Ночной свет и управление профилями питания."
+
+msgid "Smart Power Scenarios (Windows-like Automation)"
+msgstr "Умные сценарии электропитания"
+
+msgid "Automatically adjust energy profiles and performance according to hardware power states."
+msgstr "Автоматически настраивать профили производительности в зависимости от питания."
+
+msgid "Enable Smart Power Scenarios"
+msgstr "Включить умные сценарии питания"
+
+msgid "Automatically switch profiles based on AC charger connection and battery state"
+msgstr "Автоматически переключать профиль при подключении к сети или разряде батареи"
+
+msgid "When Plugged In (AC Power)"
+msgstr "При питании от сети (зарядка подключена)"
+
+msgid "Profile to apply when the charger is connected"
+msgstr "Профиль питания, применяемый при подключении к сети"
+
+msgid "When on Battery Power"
+msgstr "При работе от аккумулятора"
+
+msgid "Profile to apply when running on battery"
+msgstr "Профиль питания, применяемый при работе от аккумулятора"
+
+msgid "Keep current profile (Do not change)"
+msgstr "Сохранять текущий профиль (не менять)"
+
+msgid "Low Battery Auto Saver"
+msgstr "Энергосбережение при низком заряде"
+
+msgid "Automatically switch to Power Saver when battery level drops below threshold"
+msgstr "Автоматически переходить в энергосбережение при падении заряда ниже порога"
+
+msgid "Low Battery Threshold (%)"
+msgstr "Порог низкого заряда (%)"
+
+msgid "Battery percentage that triggers maximum power saving"
+msgstr "Процент заряда батареи, активирующий максимальное энергосбережение"
+
+msgid "Power Plans: Display & Inactivity"
+msgstr "Планы электропитания: экран и бездействие"
+
+msgid "Fine-tune display blanking and screen timeout behavior for each power state."
+msgstr "Настройка отключения экрана и энергосбережения для разных состояний питания."
+
+msgid "Adaptive Screen Inactivity Timeout"
+msgstr "Адаптивное время отключения экрана"
+
+msgid "Automatically adjust screen blank delay based on whether you are on AC or Battery"
+msgstr "Автоматически менять время отключения экрана при работе от сети или батареи"
+
+msgid "Screen Blank on AC Power"
+msgstr "Отключение экрана от сети"
+
+msgid "Turn off display after idle time while plugged in"
+msgstr "Время простоя до отключения экрана при питании от сети"
+
+msgid "Screen Blank on Battery"
+msgstr "Отключение экрана от батареи"
+
+msgid "Turn off display after idle time on battery"
+msgstr "Время простоя до отключения экрана при работе от батареи"
+
+msgid "Screen Blank in Power Saver"
+msgstr "Отключение экрана в энергосбережении"
+
+msgid "Aggressively turn off display during low battery or power saver mode"
+msgstr "Быстро отключать экран при низком заряде батареи"
+
+msgid "OLED / Battery Dark Style Saver"
+msgstr "Тёмный стиль для OLED и экономии батареи"
+
+msgid "Force dark mode when in Power Saver to maximize OLED display battery life"
+msgstr "Принудительно включать тёмную тему в энергосбережении для экономии на OLED"
+
+msgid "Day / Night Schedule Automation"
+msgstr "Автоматизация по расписанию День / Ночь"
+
+msgid "Synchronize energy profiles with solar or custom Day/Night periods."
+msgstr "Синхронизация профилей питания со сменой дня и ночи."
+
+msgid "Automate by Day / Night Schedule"
+msgstr "Автопереключение по времени суток"
+
+msgid "Switch power profiles when Day or Night transitions trigger"
+msgstr "Переключать профиль питания при смене дня и ночи"
+
+msgid "Live Telemetry & D-Bus Control"
+msgstr "Телеметрия в реальном времени и управление D-Bus"
+
+msgid "Real-time connection status to power-profiles-daemon and UPower."
+msgstr "Состояние подключения к power-profiles-daemon и UPower в реальном времени."
+
+msgid "Power Source & Battery"
+msgstr "Источник питания и батарея"
+
+msgid "Reading telemetry…"
+msgstr "Чтение телеметрии…"
+
+msgid "Active Scenario"
+msgstr "Активный сценарий"
+
+msgid "Manual / Default"
+msgstr "Ручной / По умолчанию"
+
+msgid "Charging"
+msgstr "Заряжается"
+
+msgid "Discharging"
+msgstr "Разряжается"
+
+msgid "Fully charged"
+msgstr "Полностью заряжена"
+
+msgid "On Battery"
+msgstr "От батареи"
+
+msgid "Connected to AC Charger"
+msgstr "Подключено к зарядному устройству"
+
+msgid "Desktop / AC Power (No battery detected)"
+msgstr "Питание от сети (аккумулятор не обнаружен)"
+
+msgid "Low Battery Threshold triggered"
+msgstr "Сработал порог низкого заряда аккумулятора"
+
+msgid "Battery Scenario active"
+msgstr "Активен сценарий работы от аккумулятора"
+
+msgid "AC Power Scenario active"
+msgstr "Активен сценарий питания от сети"
+
+msgid "Standard / Manual control"
+msgstr "Стандартное / ручное управление"
+
+msgid "minute"
+msgstr "минута"
+
+msgid "minutes"
+msgstr "минут"
+
+msgid "Never"
+msgstr "Никогда"
+
+msgid "Energy profile to apply during nighttime (e.g. quiet fan operation)"
+msgstr "Профиль питания ночью (например, для бесшумной работы вентиляторов)"
+
+msgid "System Sleep"
+msgstr "Спящий режим и гибернация"
+
+msgid "Suspend (Sleep)"
+msgstr "Спящий режим (Ждущий)"
+
+msgid "Do Nothing"
+msgstr "Ничего не делать"
+
+msgid "Turn Off Display"
+msgstr "Выключить экран"
+
+msgid "Laptop Lid & Inactivity Sleep Actions"
+msgstr "Действия при закрытии крышки и бездействии"
+
+msgid "Configure what happens when closing the laptop lid or after prolonged inactivity."
+msgstr "Настройка поведения системы при закрытии крышки ноутбука или долгом простое."
+
+msgid "Lid Close on AC Power"
+msgstr "Закрытие крышки при питании от сети"
+
+msgid "Action when closing laptop lid while plugged in"
+msgstr "Действие при закрытии крышки при подключенном зарядном устройстве"
+
+msgid "Lid Close on Battery"
+msgstr "Закрытие крышки при питании от батареи"
+
+msgid "Action when closing laptop lid on battery"
+msgstr "Действие при закрытии крышки при работе от аккумулятора"
+
+msgid "Prolonged Inactivity Sleep Type on Battery"
+msgstr "Тип сна при бездействии от батареи"
+
+msgid "Whether to sleep or hibernate after inactivity timeout"
+msgstr "Переходить в спящий режим или гибернацию после таймаута бездействия"
+
+msgid "Swap Memory Management"
+msgstr "Управление памятью Swap (Подкачка)"
+
+msgid "Swap space usage and kernel paging aggressiveness (/proc/swaps)."
+msgstr "Использование пространства подкачки и агрессивность ядра (/proc/swaps)."
+
+msgid "Swap Space Usage"
+msgstr "Использование Swap"
+
+msgid "Reading swap information…"
+msgstr "Чтение данных Swap…"
+
+msgid "Kernel Swappiness (vm.swappiness)"
+msgstr "Агрессивность подкачки ядра (vm.swappiness)"
+
+msgid "Active Swap Device"
+msgstr "Активное устройство Swap"
+
+msgid "Hibernation Memory Capacity"
+msgstr "Ёмкость памяти для гибернации"
+
+msgid "Hibernation & Deep Sleep"
+msgstr "Гибернация и глубокий сон"
+
+msgid "Systemd login1 hibernation state, resume partition, and emergency fallback."
+msgstr "Состояние службы systemd login1, раздел resume и аварийный режим."
+
+msgid "Systemd Hibernation Capability"
+msgstr "Поддержка гибернации systemd"
+
+msgid "Checking systemd login1…"
+msgstr "Проверка systemd login1…"
+
+msgid "Hibernate Now"
+msgstr "Гибернация сейчас"
+
+msgid "Emergency Auto-Hibernate on Critical Battery"
+msgstr "Аварийная гибернация при критическом разряде"
+
+msgid "Save session state to swap and hibernate when battery is almost exhausted"
+msgstr "Сохранять состояние сеанса в Swap и гибернировать при исчерпании заряда"
+
+msgid "Critical Battery Threshold (%)"
+msgstr "Порог критического разряда (%)"
+
+msgid "Battery percentage that triggers emergency hibernation"
+msgstr "Процент заряда аккумулятора для аварийной гибернации"
+
+msgid "Show Hibernate Action in Quick Settings"
+msgstr "Кнопка гибернации в быстрых настройках"
+
+msgid "One-click button to hibernate the system from the menu"
+msgstr "Быстрая кнопка гибернации в один клик из меню"
+
+msgid "Show Suspend Action in Quick Settings"
+msgstr "Кнопка спящего режима в быстрых настройках"
+
+msgid "One-click button to put the system to sleep from the menu"
+msgstr "Быстрая кнопка перевода в спящий режим из меню"
+
+msgid "total"
+msgstr "всего"
+
+msgid "used"
+msgstr "занято"
+
+msgid "free"
+msgstr "свободно"
+
+msgid "priority"
+msgstr "приоритет"
+
+msgid "size"
+msgstr "размер"
+
+msgid "No swap partition or file detected"
+msgstr "Раздел или файл Swap не обнаружен"
+
+msgid "Low - favors RAM over disk"
+msgstr "Низкая — приоритет оперативной памяти"
+
+msgid "Default kernel paging"
+msgstr "Стандартное распределение ядра"
+
+msgid "No active swap devices"
+msgstr "Нет активных устройств подкачки"
+
+msgid "Swap size (%s) is greater than RAM (%s) — optimal for full memory dumps"
+msgstr "Размер Swap (%s) больше RAM (%s) — оптимально для полного сохранения сеанса"
+
+msgid "Swap size (%s) is smaller than RAM (%s). Recommended to enlarge swap for reliable hibernation."
+msgstr "Размер Swap (%s) меньше RAM (%s). Рекомендуется увеличить Swap для надёжной гибернации."
+
+msgid "Swap space is required for hibernation."
+msgstr "Для гибернации необходимо наличие пространства Swap."
+
+msgid "Ready (Kernel & systemd support active)"
+msgstr "Готова к работе (поддержка ядра и systemd активна)"
+
+msgid "Not configured in kernel (Status: %s). Configure resume=%s in GRUB."
+msgstr "Не настроена в ядре (статус: %s). Укажите resume=%s в GRUB."
+
+msgid "Not configured"
+msgstr "Не настроена"
+
+
+
