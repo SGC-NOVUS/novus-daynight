@@ -578,7 +578,7 @@ export async function runDaemonCli(argv) {
     const once = argv.includes('--once');
 
     if (!force && !once && await isGnomeExtensionAlreadyOwningService()) {
-        print('Novus DayNight: GNOME Shell extension NDN@sgc-novus.fun is active; daemon skipped.');
+        print('Novus DayNight: GNOME Shell extension Novus_Tools@sgc-novus.fun is active; daemon skipped.');
         return 0;
     }
 

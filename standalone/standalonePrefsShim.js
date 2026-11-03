@@ -20,7 +20,7 @@ export function ngettext(singular, plural, n) {
 export class ExtensionPreferences {
     constructor(metadata = {}) {
         this.metadata = metadata;
-        this.uuid = metadata.uuid || 'NDN@sgc-novus.fun';
+        this.uuid = metadata.uuid || 'Novus_Tools@sgc-novus.fun';
         this.path = metadata.path || GLib.get_current_dir();
         this.dir = Gio.File.new_for_path(this.path);
     }

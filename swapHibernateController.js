@@ -282,3 +282,4 @@ export class SwapHibernateController {
         this._login1Proxy = null;
     }
 }
+

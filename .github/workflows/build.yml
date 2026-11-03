@@ -39,8 +39,8 @@ jobs:
       - name: Upload GNOME Extension Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NDN@sgc-novus.fun.zip
-          path: NDN@sgc-novus.fun.zip
+          name: Novus_Tools@sgc-novus.fun.zip
+          path: Novus_Tools@sgc-novus.fun.zip
 
       - name: Upload Debian/Ubuntu/Xubuntu .deb Artifact
         uses: actions/upload-artifact@v4
@@ -53,5 +53,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            NDN@sgc-novus.fun.zip
+            Novus_Tools@sgc-novus.fun.zip
             dist/*.deb

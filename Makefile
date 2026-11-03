@@ -1,4 +1,4 @@
-UUID = NDN@sgc-novus.fun
+UUID = Novus_Tools@sgc-novus.fun
 PKG_VERSION = 1.0.0
 BASE_DIR = $(shell pwd)
 INSTALL_DIR = $(HOME)/.local/share/gnome-shell/extensions/$(UUID)

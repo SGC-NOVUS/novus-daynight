@@ -1,4 +1,4 @@
-# SGC-NOVUS Tools (`NDN@sgc-novus.fun`)
+# SGC-NOVUS Tools (`Novus_Tools@sgc-novus.fun`)
 
 [![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-45--50-blue.svg)](https://extensions.gnome.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-green.svg)](LICENSE)
@@ -48,10 +48,10 @@ English | [Русский](README.ru.md)
 git clone https://github.com/SGC-NOVUS/novus-daynight.git
 cd novus-daynight
 make install
-gnome-extensions enable NDN@sgc-novus.fun
+gnome-extensions enable Novus_Tools@sgc-novus.fun
 ```
 
-### Build EGO Package (`NDN@sgc-novus.fun.zip`)
+### Build EGO Package (`Novus_Tools@sgc-novus.fun.zip`)
 
 ```bash
 make pack

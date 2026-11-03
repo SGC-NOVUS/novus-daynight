@@ -7,7 +7,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PKG_NAME="novus-daynight"
 PKG_VERSION="${PKG_VERSION:-1.0.0}"
 ARCH="all"
-UUID="NDN@sgc-novus.fun"
+UUID="Novus_Tools@sgc-novus.fun"
 
 DIST_DIR="${ROOT_DIR}/dist"
 STAGE_BASE="$(mktemp -d)"

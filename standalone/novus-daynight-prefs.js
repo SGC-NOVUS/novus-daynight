@@ -4,7 +4,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import system from 'system';
 
-const UUID = 'NDN@sgc-novus.fun';
+const UUID = 'Novus_Tools@sgc-novus.fun';
 
 function resolvePaths() {
     const scriptFile = Gio.File.new_for_uri(import.meta.url);

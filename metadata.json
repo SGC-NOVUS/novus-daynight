@@ -1,5 +1,5 @@
 {
-  "uuid": "NDN@sgc-novus.fun",
+  "uuid": "Novus_Tools@sgc-novus.fun",
   "name": "SGC-NOVUS Tools",
   "description": "Complete desktop automation and power management suite for GNOME Shell: solar-based Day/Night theme and wallpaper switching, smooth display brightness, Night Light sync, and quick D-Bus Power Profile switching (Performance, Balanced, Power Saver).\n\nDeveloped by SGC-NOVUS.",
   "shell-version": [
