@@ -45,7 +45,7 @@ export class BrightnessController {
                 return [];
             return monitors.filter(m => m.enabled && m.initialized);
         } catch (e) {
-            debugWarn('NovusDayNight: Failed to parse monitors JSON:', e);
+            debugWarn('Failed to parse monitors JSON:', e);
             return [];
         }
     }
@@ -84,10 +84,10 @@ export class BrightnessController {
                 const ok = await controller.setBrightness(target, this._cancellable);
                 if (ok) {
                     this._lastAppliedBrightness.set(monitor.id, target);
-                    debugLog(`NovusDayNight: Manual mode set ${monitor.name} to ${target}%`);
+                    debugLog(`Manual mode set ${monitor.name} to ${target}%`);
                 }
             } catch (e) {
-                debugWarn(`NovusDayNight: Manual brightness failed on ${monitor.name}: ${e.message}`);
+                debugWarn(`Manual brightness failed on ${monitor.name}: ${e.message}`);
             }
         }));
     }
@@ -181,7 +181,7 @@ export class BrightnessController {
 
         this._captureTransitionAnchors()
             .then(() => this.updateBrightness())
-            .catch(e => debugWarn('NovusDayNight: Initial transition brightness error:', e));
+            .catch(e => debugWarn('Initial transition brightness error:', e));
 
         this._clearBrightnessTimer();
         this._brightnessTimeoutId = GLib.timeout_add_seconds(
@@ -196,7 +196,7 @@ export class BrightnessController {
                 }
 
                 this.updateBrightness().catch(e => {
-                    debugWarn('NovusDayNight: Scheduled brightness update error:', e);
+                    debugWarn('Scheduled brightness update error:', e);
                 });
                 return GLib.SOURCE_CONTINUE;
             }
@@ -300,7 +300,7 @@ export class BrightnessController {
             throw new Error(`Display ${monitor.name} unavailable`);
 
         this._lastAppliedBrightness.set(monitor.id, targetBrightness);
-        debugLog(`NovusDayNight: Updated ${monitor.name} brightness to ${targetBrightness}%`);
+        debugLog(`Updated ${monitor.name} brightness to ${targetBrightness}%`);
         return true;
     }
 
@@ -318,7 +318,7 @@ export class BrightnessController {
                 if (typeof current === 'number' && current >= 1 && current <= 100)
                     this._transitionAnchors.set(monitor.id, current);
             } catch (e) {
-                debugWarn(`NovusDayNight: Could not read anchor for ${monitor.name}: ${e.message}`);
+                debugWarn(`Could not read anchor for ${monitor.name}: ${e.message}`);
             }
         }));
     }

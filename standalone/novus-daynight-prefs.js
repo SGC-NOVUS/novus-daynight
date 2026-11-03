@@ -115,7 +115,10 @@ function stageStandalonePrefsModule(rootDir, standaloneDir) {
         'swapHibernateController.js',
         'themeUtils.js',
         'displayController.js',
+        'solarCalculator.js',
+        'timeCalculator.js',
         'logger.js',
+        'lib',
         'prefs/dbusClient.js',
         'prefs/displayManager.js',
     ];
@@ -154,9 +157,9 @@ export async function runPrefsCli(argv) {
     app.connect('activate', () => {
         const win = new Adw.PreferencesWindow({
             application: app,
-            title: 'Novus DayNight',
-            default_width: 740,
-            default_height: 680,
+            title: 'SGC-NOVUS Tools',
+            default_width: 760,
+            default_height: 700,
             search_enabled: true,
         });
 

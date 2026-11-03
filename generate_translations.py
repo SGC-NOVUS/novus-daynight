@@ -30,9 +30,13 @@ def parse_po(file_path):
     for match in pattern.finditer(content):
         msgid = extract_str(match.group(1))
         msgstr = extract_str(match.group(2))
-        if msgid:
+        if msgstr:
             entries[msgid] = msgstr
 
+    entries.setdefault(
+        '',
+        'Content-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n',
+    )
     return entries
 
 

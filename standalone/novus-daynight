@@ -6,6 +6,8 @@ import system from 'system';
 import {
     DBUS_INTERFACE_NAME,
     DBUS_OBJECT_PATH,
+    SHELL_BUS_NAME,
+    STANDALONE_BUS_NAME,
 } from '../constants.js';
 import {
     getAvailableDualWallpapers,
@@ -30,8 +32,8 @@ import {ThemeController} from '../themeController.js';
 import {loadStandaloneSettings, runDaemonCli} from './novus-daynight-daemon.js';
 
 const DBUS_CANDIDATES = [
-    {bus: 'org.gnome.Shell', label: 'GNOME Shell Extension'},
-    {bus: 'fun.sgc_novus.NovusDayNight', label: 'Standalone Daemon'},
+    {bus: SHELL_BUS_NAME, label: 'GNOME Shell Extension'},
+    {bus: STANDALONE_BUS_NAME, label: 'Standalone Daemon'},
 ];
 
 function resolvePaths() {
@@ -165,7 +167,7 @@ async function cmdDoctor(rootDir) {
     const hasAccent = Boolean(ifaceSettings && settingsHasKey(ifaceSettings, 'accent-color'));
     const activeService = await callActiveService('GetDebugInfo');
 
-    const pc = new PowerController(settings);
+    const pc = new PowerController(settings, {enableAutomation: false});
     await new Promise(r => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => { r(); return GLib.SOURCE_REMOVE; }));
     const powerProfilesOk = pc.isAvailable();
     pc.destroy();
@@ -206,7 +208,7 @@ async function cmdDoctor(rootDir) {
 
 async function cmdPower(args, rootDir) {
     const settings = loadStandaloneSettings(rootDir);
-    const pc = new PowerController(settings);
+    const pc = new PowerController(settings, {enableAutomation: false});
     await new Promise(r => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => { r(); return GLib.SOURCE_REMOVE; }));
 
     if (!pc.isAvailable()) {

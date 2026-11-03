@@ -1,14 +1,14 @@
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
+import {
+    LOGIN1_BUS_NAME,
+    LOGIN1_MANAGER_INTERFACE,
+    LOGIN1_OBJECT_PATH,
+} from './constants.js';
 import {debugLog, debugWarn} from './logger.js';
-
-const LOGIN1_BUS_NAME = 'org.freedesktop.login1';
-const LOGIN1_OBJECT_PATH = '/org/freedesktop/login1';
-const LOGIN1_MANAGER_INTERFACE = 'org.freedesktop.login1.Manager';
 
 const Login1ManagerInterfaceXml = `
 <node>
-    <interface name="org.freedesktop.login1.Manager">
+    <interface name="${LOGIN1_MANAGER_INTERFACE}">
         <method name="CanHibernate">
             <arg type="s" direction="out" name="result"/>
         </method>
@@ -38,8 +38,26 @@ const Login1ManagerInterfaceXml = `
 
 const Login1ManagerProxyWrapper = Gio.DBusProxy.makeProxyWrapper(Login1ManagerInterfaceXml);
 
+function readFileTextAsync(path, cancellable = null) {
+    const file = Gio.File.new_for_path(path);
+    return new Promise((resolve, reject) => {
+        file.load_contents_async(cancellable, (src, res) => {
+            try {
+                const [ok, bytes] = src.load_contents_finish(res);
+                if (!ok || !bytes) {
+                    resolve('');
+                    return;
+                }
+                resolve(new TextDecoder('utf-8').decode(bytes));
+            } catch (e) {
+                reject(e);
+            }
+        });
+    });
+}
+
 export class SwapHibernateController {
-    constructor(settings = null) {
+    constructor(settings = null, {autoRefreshSwap = false} = {}) {
         this._settings = settings;
         this._cancellable = new Gio.Cancellable();
         this._login1Proxy = null;
@@ -62,105 +80,98 @@ export class SwapHibernateController {
         };
 
         this._initLogin1();
-        this.refreshSwapStats();
+        if (autoRefreshSwap)
+            this.refreshSwapStats();
     }
 
     _initLogin1() {
-        try {
-            new Login1ManagerProxyWrapper(
-                Gio.DBus.system,
-                LOGIN1_BUS_NAME,
-                LOGIN1_OBJECT_PATH,
-                (proxy, error) => {
-                    if (this._cancellable?.is_cancelled())
-                        return;
+        new Login1ManagerProxyWrapper(
+            Gio.DBus.system,
+            LOGIN1_BUS_NAME,
+            LOGIN1_OBJECT_PATH,
+            (proxy, error) => {
+                if (this._cancellable?.is_cancelled())
+                    return;
 
-                    if (error) {
-                        debugWarn(`SwapHibernateController: Failed to connect to login1: ${error.message}`);
-                        return;
-                    }
+                if (error) {
+                    debugWarn(`Failed to connect to login1 D-Bus: ${error.message}`);
+                    return;
+                }
 
-                    this._login1Proxy = proxy;
-                    this.checkSleepCapabilities();
-                },
-                this._cancellable
-            );
-        } catch (e) {
-            debugWarn(`SwapHibernateController: Exception initializing login1: ${e.message}`);
-        }
+                this._login1Proxy = proxy;
+                this.checkSleepCapabilities();
+            },
+            this._cancellable
+        );
     }
 
     checkSleepCapabilities() {
         if (!this._login1Proxy)
             return Promise.resolve();
 
+        const queryCapability = methodName => new Promise(resolve => {
+            this._login1Proxy[methodName]((res, err) => {
+                if (err || !res) {
+                    resolve('na');
+                    return;
+                }
+                resolve(res[0] || 'na');
+            });
+        });
+
         return Promise.all([
-            new Promise(resolve => {
-                this._login1Proxy.CanHibernateRemote((res, err) => {
-                    this._canHibernate = err ? 'na' : (res ? res[0] : 'na');
-                    resolve();
-                });
-            }),
-            new Promise(resolve => {
-                this._login1Proxy.CanHybridSleepRemote((res, err) => {
-                    this._canHybridSleep = err ? 'na' : (res ? res[0] : 'na');
-                    resolve();
-                });
-            }),
-            new Promise(resolve => {
-                this._login1Proxy.CanSuspendThenHibernateRemote((res, err) => {
-                    this._canSuspendThenHibernate = err ? 'na' : (res ? res[0] : 'na');
-                    resolve();
-                });
-            }),
-            new Promise(resolve => {
-                this._login1Proxy.CanSuspendRemote((res, err) => {
-                    this._canSuspend = err ? 'na' : (res ? res[0] : 'na');
-                    resolve();
-                });
-            }),
-        ]).then(() => {
+            queryCapability('CanHibernateRemote'),
+            queryCapability('CanHybridSleepRemote'),
+            queryCapability('CanSuspendThenHibernateRemote'),
+            queryCapability('CanSuspendRemote'),
+        ]).then(([canHib, canHybrid, canSuspHib, canSusp]) => {
+            if (this._cancellable?.is_cancelled())
+                return;
+
+            this._canHibernate = canHib;
+            this._canHybridSleep = canHybrid;
+            this._canSuspendThenHibernate = canSuspHib;
+            this._canSuspend = canSusp;
             this._notifyListeners();
         });
     }
 
     async refreshSwapStats() {
-        try {
-            const [swapsOk, swapsBytes] = GLib.file_get_contents('/proc/swaps');
-            const [memOk, memBytes] = GLib.file_get_contents('/proc/meminfo');
+        if (!this._cancellable || this._cancellable.is_cancelled())
+            return;
 
-            let swappiness = 60;
-            try {
-                const [swapnOk, swapnBytes] = GLib.file_get_contents('/proc/sys/vm/swappiness');
-                if (swapnOk)
-                    swappiness = parseInt(new TextDecoder().decode(swapnBytes).trim(), 10) || 60;
-            } catch {
-                // Ignore swappiness read error
-            }
+        try {
+            const [swapsText, memText, swappinessText] = await Promise.all([
+                readFileTextAsync('/proc/swaps', this._cancellable).catch(() => ''),
+                readFileTextAsync('/proc/meminfo', this._cancellable).catch(() => ''),
+                readFileTextAsync('/proc/sys/vm/swappiness', this._cancellable).catch(() => '60'),
+            ]);
+
+            if (!this._cancellable || this._cancellable.is_cancelled())
+                return;
+
+            const swappiness = Number.parseInt(swappinessText.trim(), 10) || 60;
 
             let memTotalKb = 0;
             let memAvailableKb = 0;
             let swapTotalKb = 0;
             let swapFreeKb = 0;
 
-            if (memOk) {
-                const memText = new TextDecoder().decode(memBytes);
-                const memLines = memText.split('\n');
-                for (const line of memLines) {
+            if (memText) {
+                for (const line of memText.split('\n')) {
                     if (line.startsWith('MemTotal:'))
-                        memTotalKb = parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
+                        memTotalKb = Number.parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
                     else if (line.startsWith('MemAvailable:'))
-                        memAvailableKb = parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
+                        memAvailableKb = Number.parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
                     else if (line.startsWith('SwapTotal:'))
-                        swapTotalKb = parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
+                        swapTotalKb = Number.parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
                     else if (line.startsWith('SwapFree:'))
-                        swapFreeKb = parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
+                        swapFreeKb = Number.parseInt(line.replace(/[^0-9]/g, ''), 10) || 0;
                 }
             }
 
             const devices = [];
-            if (swapsOk) {
-                const swapsText = new TextDecoder().decode(swapsBytes);
+            if (swapsText) {
                 const lines = swapsText.trim().split('\n');
                 for (let i = 1; i < lines.length; i++) {
                     const parts = lines[i].trim().split(/\s+/);
@@ -168,9 +179,9 @@ export class SwapHibernateController {
                         devices.push({
                             filename: parts[0],
                             type: parts[1],
-                            sizeKb: parseInt(parts[2], 10) || 0,
-                            usedKb: parseInt(parts[3], 10) || 0,
-                            priority: parseInt(parts[4], 10) || 0,
+                            sizeKb: Number.parseInt(parts[2], 10) || 0,
+                            usedKb: Number.parseInt(parts[3], 10) || 0,
+                            priority: Number.parseInt(parts[4], 10) || 0,
                         });
                     }
                 }
@@ -192,12 +203,13 @@ export class SwapHibernateController {
 
             this._notifyListeners();
         } catch (e) {
-            debugWarn(`SwapHibernateController: Error reading swap stats: ${e.message}`);
+            if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+                debugWarn(`Error reading swap stats: ${e.message}`);
         }
     }
 
     getSwapStats() {
-        return {...this._swapStats};
+        return {...this._swapStats, devices: [...this._swapStats.devices]};
     }
 
     canHibernate() {
@@ -221,33 +233,30 @@ export class SwapHibernateController {
     }
 
     hibernate(interactive = false) {
-        if (!this._login1Proxy)
-            return;
-
-        debugLog('SwapHibernateController: Triggering system Hibernate via D-Bus');
-        try {
-            this._login1Proxy.HibernateRemote(interactive, (_res, err) => {
-                if (err)
-                    debugWarn(`SwapHibernateController: Hibernate error: ${err.message}`);
-            });
-        } catch (e) {
-            debugWarn(`SwapHibernateController: Failed to trigger Hibernate: ${e.message}`);
-        }
+        this._invokeSleepAction('HibernateRemote', 'Hibernate', interactive);
     }
 
     suspend(interactive = false) {
+        this._invokeSleepAction('SuspendRemote', 'Suspend', interactive);
+    }
+
+    suspendThenHibernate(interactive = false) {
+        this._invokeSleepAction('SuspendThenHibernateRemote', 'SuspendThenHibernate', interactive);
+    }
+
+    hybridSleep(interactive = false) {
+        this._invokeSleepAction('HybridSleepRemote', 'HybridSleep', interactive);
+    }
+
+    _invokeSleepAction(methodName, label, interactive) {
         if (!this._login1Proxy)
             return;
 
-        debugLog('SwapHibernateController: Triggering system Suspend via D-Bus');
-        try {
-            this._login1Proxy.SuspendRemote(interactive, (_res, err) => {
-                if (err)
-                    debugWarn(`SwapHibernateController: Suspend error: ${err.message}`);
-            });
-        } catch (e) {
-            debugWarn(`SwapHibernateController: Failed to trigger Suspend: ${e.message}`);
-        }
+        debugLog(`Triggering system ${label} via login1 D-Bus`);
+        this._login1Proxy[methodName](interactive, (_res, err) => {
+            if (err)
+                debugWarn(`${label} D-Bus error: ${err.message}`);
+        });
     }
 
     addChangeListener(listener) {
@@ -256,18 +265,20 @@ export class SwapHibernateController {
     }
 
     _notifyListeners() {
+        const snapshot = {
+            canHibernate: this.canHibernate(),
+            canSuspend: this.canSuspend(),
+            canHybridSleep: this.canHybridSleep(),
+            canSuspendThenHibernate: this.canSuspendThenHibernate(),
+            rawHibernate: this._canHibernate,
+            swapStats: this.getSwapStats(),
+        };
+
         for (const listener of this._listeners) {
             try {
-                listener({
-                    canHibernate: this.canHibernate(),
-                    canSuspend: this.canSuspend(),
-                    canHybridSleep: this.canHybridSleep(),
-                    canSuspendThenHibernate: this.canSuspendThenHibernate(),
-                    rawHibernate: this._canHibernate,
-                    swapStats: this.getSwapStats(),
-                });
+                listener(snapshot);
             } catch (e) {
-                debugWarn(`SwapHibernateController: Listener error: ${e.message}`);
+                debugWarn(`SwapHibernateController listener error: ${e.message}`);
             }
         }
     }
@@ -280,6 +291,6 @@ export class SwapHibernateController {
 
         this._listeners.clear();
         this._login1Proxy = null;
+        this._settings = null;
     }
 }
-

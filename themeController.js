@@ -9,6 +9,7 @@ import {
     toLocalPath,
     yaruPairForAccentColor,
 } from './themeUtils.js';
+import {isValidTimeString} from './timeCalculator.js';
 import {debugLog} from './logger.js';
 
 export class ThemeController {
@@ -47,7 +48,7 @@ export class ThemeController {
             if (!pair)
                 return;
 
-            debugLog(`NovusDayNight: Syncing Yaru pair for accent '${accent}' -> ${pair.light} / ${pair.dark}`);
+            debugLog(`Syncing Yaru pair for accent '${accent}' -> ${pair.light} / ${pair.dark}`);
             this._settings.set_string('light-theme', pair.light);
             this._settings.set_string('dark-theme', pair.dark);
 
@@ -89,17 +90,26 @@ export class ThemeController {
                 if (hasColorScheme)
                     this._interfaceSettings.set_string('color-scheme', colorScheme);
             }
+
+            if (this._settings.get_boolean('sync-icon-theme') &&
+                settingsHasKey(this._interfaceSettings, 'icon-theme')) {
+                const targetIconTheme = isDark
+                    ? this._settings.get_string('dark-icon-theme')
+                    : this._settings.get_string('light-icon-theme');
+                if (targetIconTheme &&
+                    this._interfaceSettings.get_string('icon-theme') !== targetIconTheme)
+                    this._interfaceSettings.set_string('icon-theme', targetIconTheme);
+            }
         }
 
         const wallpaperUri = this._applyWallpaper(isDark);
 
         if (this._colorSettings) {
             const nightLightMode = this._settings.get_string('night-light-mode');
-            if (nightLightMode === 'sync-with-theme') {
+            if (nightLightMode === 'sync-with-theme')
                 this._colorSettings.set_boolean('night-light-enabled', isDark);
-            } else if (nightLightMode === 'custom-schedule') {
+            else if (nightLightMode === 'custom-schedule')
                 this.updateNightLightSchedule();
-            }
         }
 
         if (this._onApplied)
@@ -108,11 +118,11 @@ export class ThemeController {
         if (themeAlreadySet)
             return;
 
-        debugLog(`NovusDayNight: Applied ${isDark ? 'dark' : 'light'} theme (${theme}), scheme=${colorScheme}`);
+        debugLog(`Applied ${isDark ? 'dark' : 'light'} theme (${theme}), scheme=${colorScheme}`);
 
         if (showNotification && !manualModeActive &&
             this._settings.get_boolean('show-notifications') && this._notify) {
-            const title = this._('Novus DayNight');
+            const title = this._('SGC-NOVUS Tools');
             const body = isDark
                 ? this._('Switched to dark mode')
                 : this._('Switched to light mode');
@@ -184,12 +194,11 @@ export class ThemeController {
 
         const startTime = this._settings.get_string('night-light-start-time');
         const endTime = this._settings.get_string('night-light-end-time');
-        const [startH, startM] = startTime.split(':').map(Number);
-        const [endH, endM] = endTime.split(':').map(Number);
-
-        if (Number.isNaN(startH) || Number.isNaN(startM) ||
-            Number.isNaN(endH) || Number.isNaN(endM))
+        if (!isValidTimeString(startTime) || !isValidTimeString(endTime))
             return;
+
+        const [startH, startM] = startTime.trim().split(':').map(Number);
+        const [endH, endM] = endTime.trim().split(':').map(Number);
 
         this._colorSettings.set_boolean('night-light-enabled', true);
         this._colorSettings.set_boolean('night-light-schedule-automatic', false);
@@ -207,7 +216,6 @@ export class ThemeController {
         if (!this._settings)
             return;
 
-        const available = getAvailableGtkThemes();
         const lightTheme = this._settings.get_string('light-theme');
         const darkTheme = this._settings.get_string('dark-theme');
         const currentTheme = this._interfaceSettings?.get_string('gtk-theme') ?? '';
@@ -220,11 +228,12 @@ export class ThemeController {
         const isIdenticalPair = lightTheme === darkTheme;
 
         if (isFactoryDefault || isIdenticalPair) {
+            const available = getAvailableGtkThemes();
             const seed = isFactoryDefault ? currentTheme : (lightTheme || currentTheme);
             const pair = inferThemePair(seed, available);
             this._settings.set_string('light-theme', pair.light);
             this._settings.set_string('dark-theme', pair.dark);
-            debugLog(`NovusDayNight: Initialized theme pair -> ${pair.light} / ${pair.dark}`);
+            debugLog(`Initialized theme pair -> ${pair.light} / ${pair.dark}`);
         }
     }
 

@@ -2,10 +2,13 @@ import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import {WALLPAPER_MODES} from '../constants.js';
 import {
     getAvailableDualWallpapers,
     getAvailableGtkThemes,
+    getAvailableIconThemes,
     getOptionalSettings,
+    inferIconThemePair,
     inferThemePair,
     settingsHasKey,
     toFileUri,
@@ -20,6 +23,10 @@ function selectComboString(row, model, target) {
             break;
         }
     }
+}
+
+function addPrefixIcon(row, iconName) {
+    row.add_prefix(new Gtk.Image({icon_name: iconName}));
 }
 
 export function createAppearancePage(window, settings) {
@@ -39,7 +46,7 @@ export function createAppearancePage(window, settings) {
     const overrideRow = new Adw.ActionRow({
         subtitle: _('Click Reset to follow the day/night schedule again.'),
     });
-    overrideRow.add_prefix(new Gtk.Image({icon_name: 'dialog-warning-symbolic'}));
+    addPrefixIcon(overrideRow, 'dialog-warning-symbolic');
     const overrideResetButton = new Gtk.Button({
         label: _('Reset'),
         valign: Gtk.Align.CENTER,
@@ -92,6 +99,7 @@ export function createAppearancePage(window, settings) {
         subtitle: _('Theme to use during the day'),
         model: lightThemeModel,
     });
+    addPrefixIcon(lightThemeRow, 'weather-clear-symbolic');
     themeGroup.add(lightThemeRow);
 
     const darkThemeRow = new Adw.ComboRow({
@@ -99,6 +107,7 @@ export function createAppearancePage(window, settings) {
         subtitle: _('Theme to use at night'),
         model: darkThemeModel,
     });
+    addPrefixIcon(darkThemeRow, 'weather-clear-night-symbolic');
     themeGroup.add(darkThemeRow);
 
     selectComboString(lightThemeRow, lightThemeModel, settings.get_string('light-theme'));
@@ -123,10 +132,79 @@ export function createAppearancePage(window, settings) {
         selectComboString(darkThemeRow, darkThemeModel, settings.get_string('dark-theme'));
     }));
 
+    const availableIconThemes = getAvailableIconThemes();
+    for (const savedKey of ['light-icon-theme', 'dark-icon-theme']) {
+        const saved = settings.get_string(savedKey);
+        if (saved && !availableIconThemes.includes(saved))
+            availableIconThemes.push(saved);
+    }
+    availableIconThemes.sort((a, b) => a.localeCompare(b));
+
+    const lightIconModel = new Gtk.StringList();
+    const darkIconModel = new Gtk.StringList();
+    for (const iconTheme of availableIconThemes) {
+        lightIconModel.append(iconTheme);
+        darkIconModel.append(iconTheme);
+    }
+
+    const syncIconRow = new Adw.SwitchRow({
+        title: _('Sync Icon Theme with Day / Night'),
+        subtitle: _('Switch icon packs (e.g. Papirus-Light / Papirus-Dark) automatically'),
+    });
+    addPrefixIcon(syncIconRow, 'applications-graphics-symbolic');
+    settings.bind('sync-icon-theme', syncIconRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    themeGroup.add(syncIconRow);
+
+    const lightIconRow = new Adw.ComboRow({
+        title: _('Light Icon Theme'),
+        subtitle: _('Icon theme to use during the day'),
+        model: lightIconModel,
+        visible: settings.get_boolean('sync-icon-theme'),
+    });
+    addPrefixIcon(lightIconRow, 'weather-clear-symbolic');
+    themeGroup.add(lightIconRow);
+
+    const darkIconRow = new Adw.ComboRow({
+        title: _('Dark Icon Theme'),
+        subtitle: _('Icon theme to use at night'),
+        model: darkIconModel,
+        visible: settings.get_boolean('sync-icon-theme'),
+    });
+    addPrefixIcon(darkIconRow, 'weather-clear-night-symbolic');
+    themeGroup.add(darkIconRow);
+
+    selectComboString(lightIconRow, lightIconModel, settings.get_string('light-icon-theme'));
+    selectComboString(darkIconRow, darkIconModel, settings.get_string('dark-icon-theme'));
+
+    lightIconRow.connect('notify::selected', () => {
+        const selected = lightIconRow.selected_item;
+        if (selected && settings.get_string('light-icon-theme') !== selected.string)
+            settings.set_string('light-icon-theme', selected.string);
+    });
+
+    darkIconRow.connect('notify::selected', () => {
+        const selected = darkIconRow.selected_item;
+        if (selected && settings.get_string('dark-icon-theme') !== selected.string)
+            settings.set_string('dark-icon-theme', selected.string);
+    });
+
+    signalIds.push(settings.connect('changed::light-icon-theme', () => {
+        selectComboString(lightIconRow, lightIconModel, settings.get_string('light-icon-theme'));
+    }));
+    signalIds.push(settings.connect('changed::dark-icon-theme', () => {
+        selectComboString(darkIconRow, darkIconModel, settings.get_string('dark-icon-theme'));
+    }));
+    signalIds.push(settings.connect('changed::sync-icon-theme', () => {
+        const syncIcon = settings.get_boolean('sync-icon-theme');
+        lightIconRow.visible = syncIcon;
+        darkIconRow.visible = syncIcon;
+    }));
+
     const autoPairRow = new Adw.ActionRow({
         title: _('Auto-Pair Light & Dark Themes'),
         subtitle: _('Automatically match the selected theme with its light/dark counterpart'),
     });
+    addPrefixIcon(autoPairRow, 'emblem-synchronizing-symbolic');
     const autoPairBtn = new Gtk.Button({
         label: _('Auto-Pair'),
         valign: Gtk.Align.CENTER,
@@ -138,6 +216,16 @@ export function createAppearancePage(window, settings) {
         selectComboString(darkThemeRow, darkThemeModel, pair.dark);
         settings.set_string('light-theme', pair.light);
         settings.set_string('dark-theme', pair.dark);
+
+        if (settings.get_boolean('sync-icon-theme')) {
+            const iconSeed = lightIconRow.selected_item?.string || settings.get_string('light-icon-theme');
+            const iconPair = inferIconThemePair(iconSeed, availableIconThemes);
+            selectComboString(lightIconRow, lightIconModel, iconPair.light);
+            selectComboString(darkIconRow, darkIconModel, iconPair.dark);
+            settings.set_string('light-icon-theme', iconPair.light);
+            settings.set_string('dark-icon-theme', iconPair.dark);
+        }
+
         window.add_toast(new Adw.Toast({
             title: _('Paired themes: %s / %s').replace('%s', pair.light).replace('%s', pair.dark),
             timeout: 3,
@@ -152,6 +240,7 @@ export function createAppearancePage(window, settings) {
             title: _('Sync with System Accent Color'),
             subtitle: _('Automatically switch Yaru light/dark variants when accent color changes'),
         });
+        addPrefixIcon(accentSyncRow, 'preferences-color-symbolic');
         settings.bind(
             'sync-ubuntu-accent',
             accentSyncRow,
@@ -165,6 +254,7 @@ export function createAppearancePage(window, settings) {
         title: _('Show in Quick Settings'),
         subtitle: _('Add DayNight mode switcher to the GNOME top-bar system menu'),
     });
+    addPrefixIcon(quickSettingsRow, 'preferences-system-symbolic');
     settings.bind(
         'show-quick-settings',
         quickSettingsRow,
@@ -177,6 +267,7 @@ export function createAppearancePage(window, settings) {
         title: _('True Light Mode'),
         subtitle: _('Use prefer-light color scheme during daytime'),
     });
+    addPrefixIcon(trueLightModeRow, 'display-brightness-symbolic');
     settings.bind(
         'true-light-mode',
         trueLightModeRow,
@@ -189,6 +280,7 @@ export function createAppearancePage(window, settings) {
         title: _('Show Notifications'),
         subtitle: _('Display a notification when theme switches automatically'),
     });
+    addPrefixIcon(notificationsRow, 'preferences-system-notifications-symbolic');
     settings.bind(
         'show-notifications',
         notificationsRow,
@@ -203,20 +295,20 @@ export function createAppearancePage(window, settings) {
     });
     page.add(wallpaperGroup);
 
-    const wpModes = ['disabled', 'dual', 'separate'];
     const wallpaperModeModel = new Gtk.StringList();
     wallpaperModeModel.append(_('Disabled'));
     wallpaperModeModel.append(_('Dual Wallpaper Theme (Day & Night in pair)'));
     wallpaperModeModel.append(_('Separate Custom Files (Day and Night separately)'));
 
     const savedWpMode = settings.get_string('wallpaper-mode') || 'disabled';
-    const initialWpIdx = Math.max(0, wpModes.indexOf(savedWpMode));
+    const initialWpIdx = Math.max(0, WALLPAPER_MODES.indexOf(savedWpMode));
 
     const wallpaperModeRow = new Adw.ComboRow({
         title: _('Wallpaper Mode'),
         model: wallpaperModeModel,
         selected: initialWpIdx,
     });
+    addPrefixIcon(wallpaperModeRow, 'preferences-desktop-wallpaper-symbolic');
     wallpaperGroup.add(wallpaperModeRow);
 
     const dualWpList = getAvailableDualWallpapers();
@@ -232,8 +324,9 @@ export function createAppearancePage(window, settings) {
         subtitle: _('System day/night wallpapers with automatic smooth transition'),
         model: dualWpModel,
         selected: dualWpList.length > 0 ? initialDualIdx : 0,
-        visible: wpModes[initialWpIdx] === 'dual',
+        visible: WALLPAPER_MODES[initialWpIdx] === 'dual',
     });
+    addPrefixIcon(dualWpRow, 'image-x-generic-symbolic');
     wallpaperGroup.add(dualWpRow);
 
     dualWpRow.connect('notify::selected', () => {
@@ -251,13 +344,14 @@ export function createAppearancePage(window, settings) {
             bgSettings.set_string('picture-uri-dark', darkUri);
     });
 
-    const addCustomWallpaperChooser = (title, key, isDark) => {
+    const addCustomWallpaperChooser = (title, key, isDark, iconName) => {
         const currentUri = settings.get_string(key);
         const row = new Adw.ActionRow({
             title,
             subtitle: currentUri ? currentUri.replace(/^file:\/\//, '') : _('No wallpaper selected'),
-            visible: wpModes[initialWpIdx] === 'separate',
+            visible: WALLPAPER_MODES[initialWpIdx] === 'separate',
         });
+        addPrefixIcon(row, iconName);
 
         const chooseBtn = new Gtk.Button({
             label: _('Choose File…'),
@@ -313,19 +407,22 @@ export function createAppearancePage(window, settings) {
     const lightWpRow = addCustomWallpaperChooser(
         _('Light Mode Wallpaper'),
         'light-wallpaper-uri',
-        false
+        false,
+        'weather-clear-symbolic'
     );
     const darkWpRow = addCustomWallpaperChooser(
         _('Dark Mode Wallpaper'),
         'dark-wallpaper-uri',
-        true
+        true,
+        'weather-clear-night-symbolic'
     );
 
     const lockScreenWpRow = new Adw.SwitchRow({
         title: _('Sync Lock Screen Wallpaper'),
         subtitle: _('Apply the active day/night wallpaper to the lock screen as well'),
-        visible: wpModes[initialWpIdx] !== 'disabled',
+        visible: WALLPAPER_MODES[initialWpIdx] !== 'disabled',
     });
+    addPrefixIcon(lockScreenWpRow, 'system-lock-screen-symbolic');
     settings.bind(
         'sync-lock-screen-wallpaper',
         lockScreenWpRow,
@@ -335,7 +432,7 @@ export function createAppearancePage(window, settings) {
     wallpaperGroup.add(lockScreenWpRow);
 
     wallpaperModeRow.connect('notify::selected', () => {
-        const mode = wpModes[wallpaperModeRow.selected] ?? 'disabled';
+        const mode = WALLPAPER_MODES[wallpaperModeRow.selected] ?? 'disabled';
         settings.set_string('wallpaper-mode', mode);
         dualWpRow.visible = mode === 'dual';
         lightWpRow.visible = mode === 'separate';

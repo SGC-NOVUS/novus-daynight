@@ -2,20 +2,20 @@ import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import {NIGHT_LIGHT_MODES} from '../constants.js';
 import {
     DDC_SERVICE_BUS,
     DdcServiceBackend,
     MutterBacklightBackend,
     PowerScreenBackend,
 } from '../displayController.js';
+import {isValidTimeString} from '../timeCalculator.js';
+import {getOptionalSettings, settingsHasKey} from '../themeUtils.js';
 import {MonitorConfigDialog} from './monitorDialog.js';
 
-const NIGHT_LIGHT_MODES = [
-    'disabled',
-    'sync-with-theme',
-    'follow-night-light',
-    'custom-schedule',
-];
+function addPrefixIcon(row, iconName) {
+    row.add_prefix(new Gtk.Image({icon_name: iconName}));
+}
 
 export function createBrightnessPage(window, settings) {
     const cancellable = new Gio.Cancellable();
@@ -35,6 +35,7 @@ export function createBrightnessPage(window, settings) {
         title: _('Control Brightness'),
         subtitle: _('Gradually adjust screen brightness throughout the day'),
     });
+    addPrefixIcon(controlBrightnessRow, 'display-brightness-symbolic');
     settings.bind(
         'control-brightness',
         controlBrightnessRow,
@@ -47,13 +48,14 @@ export function createBrightnessPage(window, settings) {
         title: _('Configure Monitors'),
         subtitle: _('Configure brightness for built-in and external monitors'),
     });
+    addPrefixIcon(configureMonitorsRow, 'video-display-symbolic');
     const configureButton = new Gtk.Button({
         label: _('Configure…'),
         valign: Gtk.Align.CENTER,
     });
     configureButton.connect('clicked', () => {
         const dialog = new MonitorConfigDialog(window, settings);
-        dialog.show();
+        dialog.present();
     });
     configureMonitorsRow.add_suffix(configureButton);
     configureMonitorsRow.activatable_widget = configureButton;
@@ -95,6 +97,13 @@ export function createBrightnessPage(window, settings) {
         title: _('D-Bus Display Backends'),
         description: _('Native GNOME session D-Bus interfaces used for brightness control'),
     });
+    const recheckBtn = new Gtk.Button({
+        icon_name: 'view-refresh-symbolic',
+        valign: Gtk.Align.CENTER,
+        tooltip_text: _('Re-check D-Bus backends'),
+        css_classes: ['flat'],
+    });
+    backendsGroup.set_header_suffix(recheckBtn);
     page.add(backendsGroup);
 
     const builtinDiagIcon = new Gtk.Image({icon_name: 'display-brightness-symbolic'});
@@ -157,16 +166,9 @@ export function createBrightnessPage(window, settings) {
         }
     };
 
-    const recheckBtn = new Gtk.Button({
-        icon_name: 'view-refresh-symbolic',
-        valign: Gtk.Align.CENTER,
-        tooltip_text: _('Re-check D-Bus backends'),
-        css_classes: ['flat'],
-    });
     recheckBtn.connect('clicked', () => {
         refreshBackends();
     });
-    externalDiagRow.add_suffix(recheckBtn);
 
     refreshBackends();
 
@@ -187,33 +189,82 @@ export function createBrightnessPage(window, settings) {
         model: nightLightModel,
         selected: savedNlIdx,
     });
+    addPrefixIcon(nightLightModeRow, 'night-light-symbolic');
     nightLightGroup.add(nightLightModeRow);
 
     const nightLightStartRow = new Adw.EntryRow({
         title: _('Night Light Start Time (24-hour)'),
         text: settings.get_string('night-light-start-time'),
+        show_apply_button: true,
         visible: NIGHT_LIGHT_MODES[savedNlIdx] === 'custom-schedule',
     });
-    settings.bind(
-        'night-light-start-time',
-        nightLightStartRow,
-        'text',
-        Gio.SettingsBindFlags.DEFAULT
-    );
+    addPrefixIcon(nightLightStartRow, 'preferences-system-time-symbolic');
     nightLightGroup.add(nightLightStartRow);
 
     const nightLightEndRow = new Adw.EntryRow({
         title: _('Night Light End Time (24-hour)'),
         text: settings.get_string('night-light-end-time'),
+        show_apply_button: true,
         visible: NIGHT_LIGHT_MODES[savedNlIdx] === 'custom-schedule',
     });
-    settings.bind(
-        'night-light-end-time',
-        nightLightEndRow,
-        'text',
-        Gio.SettingsBindFlags.DEFAULT
-    );
+    addPrefixIcon(nightLightEndRow, 'preferences-system-time-symbolic');
     nightLightGroup.add(nightLightEndRow);
+
+    const bindValidatedTimeRow = (entryRow, settingKey) => {
+        entryRow.connect('notify::text', () => {
+            if (isValidTimeString(entryRow.get_text()))
+                entryRow.remove_css_class('error');
+            else
+                entryRow.add_css_class('error');
+        });
+
+        entryRow.connect('apply', () => {
+            const text = entryRow.get_text().trim();
+            if (isValidTimeString(text)) {
+                entryRow.remove_css_class('error');
+                settings.set_string(settingKey, text);
+            } else {
+                entryRow.add_css_class('error');
+                window.add_toast(new Adw.Toast({
+                    title: _('Use 24-hour HH:MM format (e.g. 07:00 or 19:30)'),
+                    timeout: 3,
+                }));
+            }
+        });
+    };
+
+    bindValidatedTimeRow(nightLightStartRow, 'night-light-start-time');
+    bindValidatedTimeRow(nightLightEndRow, 'night-light-end-time');
+
+    const colorSettings = getOptionalSettings('org.gnome.settings-daemon.plugins.color');
+    let colorTempSignalId = null;
+
+    if (colorSettings && settingsHasKey(colorSettings, 'night-light-temperature')) {
+        const currentTemp = Math.min(4700, Math.max(1700, colorSettings.get_uint('night-light-temperature') || 2700));
+        const tempRow = new Adw.SpinRow({
+            title: _('Night Light Color Temperature (K)'),
+            subtitle: _('Lower Kelvin values produce a warmer amber tint (1700K–4700K)'),
+            adjustment: new Gtk.Adjustment({
+                lower: 1700,
+                upper: 4700,
+                step_increment: 100,
+                page_increment: 300,
+                value: currentTemp,
+            }),
+        });
+        addPrefixIcon(tempRow, 'weather-clear-night-symbolic');
+        tempRow.connect('notify::value', () => {
+            const val = Math.round(tempRow.value);
+            if (colorSettings.get_uint('night-light-temperature') !== val)
+                colorSettings.set_uint('night-light-temperature', val);
+        });
+        colorTempSignalId = colorSettings.connect('changed::night-light-temperature', () => {
+            const val = Math.min(4700, Math.max(1700, colorSettings.get_uint('night-light-temperature') || 2700));
+            if (Math.round(tempRow.value) !== val)
+                tempRow.value = val;
+        });
+        nightLightGroup.add(tempRow);
+    }
 
     nightLightModeRow.connect('notify::selected', () => {
         const mode = NIGHT_LIGHT_MODES[nightLightModeRow.selected] ?? 'disabled';
@@ -227,6 +278,10 @@ export function createBrightnessPage(window, settings) {
         page,
         destroy() {
             cancellable.cancel();
+            if (colorSettings && colorTempSignalId) {
+                colorSettings.disconnect(colorTempSignalId);
+                colorTempSignalId = null;
+            }
             for (const id of signalIds)
                 settings.disconnect(id);
             signalIds.length = 0;

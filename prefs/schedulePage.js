@@ -3,30 +3,9 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import {DARK_TRIGGERS, LIGHT_TRIGGERS} from '../constants.js';
 import {debugLog, debugWarn} from '../logger.js';
-
-const LIGHT_TRIGGERS = [
-    'first-light',
-    'nautical-dawn',
-    'dawn',
-    'sunrise',
-    'sunrise-end',
-    'golden-hour-end',
-    'solar-noon',
-    'custom',
-];
-
-const DARK_TRIGGERS = [
-    'solar-noon',
-    'golden-hour',
-    'sunset-start',
-    'sunset',
-    'dusk',
-    'nautical-dusk',
-    'last-light',
-    'nadir',
-    'custom',
-];
+import {isValidTimeString} from '../timeCalculator.js';
 
 function getLocationSubtitle(settings) {
     const lat = settings.get_string('manual-latitude');
@@ -36,6 +15,10 @@ function getLocationSubtitle(settings) {
     if (lat && lng)
         return name || `${lat}, ${lng}`;
     return _('Not configured - using custom times');
+}
+
+function addPrefixIcon(row, iconName) {
+    row.add_prefix(new Gtk.Image({icon_name: iconName}));
 }
 
 export function createSchedulePage(window, settings, uuid) {
@@ -81,6 +64,7 @@ export function createSchedulePage(window, settings, uuid) {
         model: lightTriggerModel,
         selected: savedLightIdx >= 0 ? savedLightIdx : 3,
     });
+    addPrefixIcon(lightTriggerRow, 'weather-clear-symbolic');
     timingGroup.add(lightTriggerRow);
 
     const customLightTimeRow = new Adw.EntryRow({
@@ -88,6 +72,7 @@ export function createSchedulePage(window, settings, uuid) {
         text: settings.get_string('custom-light-time'),
         show_apply_button: true,
     });
+    addPrefixIcon(customLightTimeRow, 'preferences-system-time-symbolic');
     timingGroup.add(customLightTimeRow);
 
     const darkTriggerModel = new Gtk.StringList();
@@ -110,6 +95,7 @@ export function createSchedulePage(window, settings, uuid) {
         model: darkTriggerModel,
         selected: savedDarkIdx >= 0 ? savedDarkIdx : 3,
     });
+    addPrefixIcon(darkTriggerRow, 'weather-clear-night-symbolic');
     timingGroup.add(darkTriggerRow);
 
     const customDarkTimeRow = new Adw.EntryRow({
@@ -117,6 +103,7 @@ export function createSchedulePage(window, settings, uuid) {
         text: settings.get_string('custom-dark-time'),
         show_apply_button: true,
     });
+    addPrefixIcon(customDarkTimeRow, 'preferences-system-time-symbolic');
     timingGroup.add(customDarkTimeRow);
 
     const locationGroup = new Adw.PreferencesGroup({
@@ -129,6 +116,7 @@ export function createSchedulePage(window, settings, uuid) {
         subtitle: getLocationSubtitle(settings),
         show_enable_switch: false,
     });
+    addPrefixIcon(locationExpander, 'mark-location-symbolic');
     locationGroup.add(locationExpander);
 
     const latitudeRow = new Adw.EntryRow({
@@ -259,12 +247,32 @@ export function createSchedulePage(window, settings, uuid) {
         updateTriggerVisibility();
     });
 
-    customLightTimeRow.connect('apply', () => {
-        settings.set_string('custom-light-time', customLightTimeRow.get_text());
-    });
-    customDarkTimeRow.connect('apply', () => {
-        settings.set_string('custom-dark-time', customDarkTimeRow.get_text());
-    });
+    const bindValidatedTimeRow = (entryRow, settingKey) => {
+        entryRow.connect('notify::text', () => {
+            const valid = isValidTimeString(entryRow.get_text());
+            if (valid)
+                entryRow.remove_css_class('error');
+            else
+                entryRow.add_css_class('error');
+        });
+
+        entryRow.connect('apply', () => {
+            const text = entryRow.get_text().trim();
+            if (isValidTimeString(text)) {
+                entryRow.remove_css_class('error');
+                settings.set_string(settingKey, text);
+            } else {
+                entryRow.add_css_class('error');
+                window.add_toast(new Adw.Toast({
+                    title: _('Use 24-hour HH:MM format (e.g. 07:00 or 19:30)'),
+                    timeout: 3,
+                }));
+            }
+        });
+    };
+
+    bindValidatedTimeRow(customLightTimeRow, 'custom-light-time');
+    bindValidatedTimeRow(customDarkTimeRow, 'custom-dark-time');
 
     const applyDetectedLocation = (latStr, lngStr, locName) => {
         if (cancellable.is_cancelled())
@@ -277,6 +285,11 @@ export function createSchedulePage(window, settings, uuid) {
         autoDetectRow.subtitle = locName;
         locationExpander.subtitle = locName;
         updatingProgrammatically = false;
+
+        window.add_toast(new Adw.Toast({
+            title: `${_('Location detected')}: ${locName}`,
+            timeout: 3,
+        }));
     };
 
     const reverseGeocode = async (Soup, session, latStr, lngStr) => {
@@ -285,7 +298,7 @@ export function createSchedulePage(window, settings, uuid) {
         const msg = Soup.Message.new('GET', url);
         msg.request_headers.append(
             'User-Agent',
-            'Novus-DayNight/2.0 (https://github.com/SGC-NOVUS/novus-daynight)'
+            'SGC-NOVUS-Tools/2.0 (https://github.com/SGC-NOVUS/novus-tools)'
         );
 
         try {
@@ -318,7 +331,7 @@ export function createSchedulePage(window, settings, uuid) {
                     return parts.join(', ');
             }
         } catch (e) {
-            debugWarn(`NovusDayNight: Reverse geocoding skipped: ${e.message}`);
+            debugWarn(`Reverse geocoding skipped: ${e.message}`);
         }
 
         return _('Location detected');
@@ -354,10 +367,10 @@ export function createSchedulePage(window, settings, uuid) {
                         lat: loc.latitude.toFixed(4),
                         lng: loc.longitude.toFixed(4),
                     };
-                    debugLog(`NovusDayNight: GeoClue2 resolved ${coords.lat}, ${coords.lng}`);
+                    debugLog(`GeoClue2 resolved ${coords.lat}, ${coords.lng}`);
                 }
             } catch (e) {
-                debugLog(`NovusDayNight: GeoClue2 unavailable (${e.message}), falling back to ipinfo.io`);
+                debugLog(`GeoClue2 unavailable (${e.message}), falling back to ipinfo.io`);
             }
 
             const {default: Soup} = await import('gi://Soup?version=3.0');
@@ -401,15 +414,12 @@ export function createSchedulePage(window, settings, uuid) {
             applyDetectedLocation(coords.lat, coords.lng, locName);
         } catch (e) {
             if (!cancellable.is_cancelled()) {
-                const dialog = new Adw.MessageDialog({
-                    heading: _('Location Detection Failed'),
-                    body: e.message ||
-                        _('Unable to detect your location. Please enter coordinates manually.'),
-                    modal: true,
-                    transient_for: window,
-                });
-                dialog.add_response('ok', _('OK'));
-                dialog.present();
+                window.add_toast(new Adw.Toast({
+                    title: `${_('Location Detection Failed')}: ${
+                        e.message || _('Unable to detect your location. Please enter coordinates manually.')
+                    }`,
+                    timeout: 5,
+                }));
             }
         } finally {
             if (!cancellable.is_cancelled()) {

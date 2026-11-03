@@ -10,7 +10,8 @@
     "49",
     "50"
   ],
-  "url": "https://github.com/SGC-NOVUS/novus-daynight",
+  "url": "https://github.com/SGC-NOVUS/novus-tools",
+  "version-name": "2.0.0",
   "gettext-domain": "novus-daynight",
   "settings-schema": "org.gnome.shell.extensions.novus-daynight"
 }

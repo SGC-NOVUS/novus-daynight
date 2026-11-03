@@ -154,7 +154,7 @@ export class MutterBacklightBackend extends DisplayController {
 
             return entries.length > 0 ? {serial, entries} : null;
         } catch (e) {
-            debugLog(`NovusDayNight: Mutter Backlight property unavailable: ${e.message}`);
+            debugLog(`Mutter Backlight property unavailable: ${e.message}`);
             return null;
         }
     }
@@ -186,7 +186,7 @@ export class MutterBacklightBackend extends DisplayController {
                 });
             }
         } catch (e) {
-            debugLog(`NovusDayNight: Mutter GetCurrentState unavailable: ${e.message}`);
+            debugLog(`Mutter GetCurrentState unavailable: ${e.message}`);
         }
         return specs;
     }
@@ -222,6 +222,133 @@ export class MutterBacklightBackend extends DisplayController {
         }
 
         return external;
+    }
+
+    static async getRefreshRateInfo(cancellable = null) {
+        try {
+            const reply = await callSessionDBus(
+                MUTTER_DISPLAY_BUS,
+                MUTTER_DISPLAY_PATH,
+                MUTTER_DISPLAY_IFACE,
+                'GetCurrentState',
+                null,
+                {cancellable}
+            );
+            const [, monitors] = reply.recursiveUnpack();
+            const result = [];
+            for (const [spec, modes, props] of monitors) {
+                const [connector] = spec;
+                const currentMode = modes.find(m => m[6]?.['is-current'] === true);
+                if (!currentMode)
+                    continue;
+
+                const [, width, height, currentRate] = currentMode;
+                const sameResRates = modes
+                    .filter(m => m[1] === width && m[2] === height)
+                    .map(m => Math.round(m[3]))
+                    .filter((v, idx, arr) => arr.indexOf(v) === idx)
+                    .sort((a, b) => b - a);
+
+                result.push({
+                    connector,
+                    displayName: props?.['display-name'] || connector,
+                    isBuiltin: Boolean(props?.['is-builtin']) || isInternalConnector(connector),
+                    currentRate: Math.round(currentRate),
+                    availableRates: sameResRates,
+                });
+            }
+            return result;
+        } catch {
+            return [];
+        }
+    }
+
+    static async setLowRefreshRate(enableLowHz, cancellable = null) {
+        try {
+            const reply = await callSessionDBus(
+                MUTTER_DISPLAY_BUS,
+                MUTTER_DISPLAY_PATH,
+                MUTTER_DISPLAY_IFACE,
+                'GetCurrentState',
+                null,
+                {cancellable}
+            );
+            const [serial, monitors, logicalMonitors] = reply.recursiveUnpack();
+            const monitorMap = new Map();
+            for (const [spec, modes, props] of monitors) {
+                const [connector] = spec;
+                monitorMap.set(connector, {modes, props});
+            }
+
+            let needsChange = false;
+            const newLogicalMonitors = [];
+
+            for (const [x, y, scale, transform, primary, attachedSpecs] of logicalMonitors) {
+                const monitorConfigs = [];
+                for (const [connector] of attachedSpecs) {
+                    const monData = monitorMap.get(connector);
+                    if (!monData)
+                        return false;
+
+                    const {modes} = monData;
+                    const currentMode = modes.find(m => m[6]?.['is-current'] === true);
+                    if (!currentMode)
+                        return false;
+
+                    const [curModeId, curW, curH, curRate, , validScales] = currentMode;
+                    const sameResModes = modes.filter(m =>
+                        m[1] === curW &&
+                        m[2] === curH &&
+                        (!Array.isArray(m[5]) || m[5].some(s => Math.abs(s - scale) < 0.05))
+                    );
+
+                    let targetModeId = curModeId;
+                    if (enableLowHz) {
+                        if (curRate > 62.0) {
+                            const lowCandidates = sameResModes
+                                .filter(m => m[3] >= 48.0 && m[3] <= 61.5)
+                                .sort((a, b) => Math.abs(a[3] - 60.0) - Math.abs(b[3] - 60.0));
+                            if (lowCandidates.length > 0 && lowCandidates[0][0] !== curModeId) {
+                                targetModeId = lowCandidates[0][0];
+                                needsChange = true;
+                            }
+                        }
+                    } else {
+                        const highCandidates = [...sameResModes].sort((a, b) => b[3] - a[3]);
+                        if (highCandidates.length > 0 && highCandidates[0][3] > curRate + 1.0) {
+                            targetModeId = highCandidates[0][0];
+                            needsChange = true;
+                        }
+                    }
+
+                    monitorConfigs.push([connector, targetModeId, {}]);
+                    void validScales;
+                }
+                newLogicalMonitors.push([x, y, scale, transform, primary, monitorConfigs]);
+            }
+
+            if (!needsChange)
+                return false;
+
+            await callSessionDBus(
+                MUTTER_DISPLAY_BUS,
+                MUTTER_DISPLAY_PATH,
+                MUTTER_DISPLAY_IFACE,
+                'ApplyMonitorsConfig',
+                new GLib.Variant('(uua(iiduba(ssa{sv}))a{sv})', [
+                    serial,
+                    1,
+                    newLogicalMonitors,
+                    {},
+                ]),
+                {cancellable}
+            );
+            debugLog(`Applied refresh rate mode (lowHz=${enableLowHz}) via Mutter D-Bus`);
+            return true;
+        } catch (e) {
+            debugWarn(`Mutter ApplyMonitorsConfig refresh rate change failed: ${e.message}`);
+            return false;
+        }
     }
 
     async _resolveEntry(cancellable = null) {
@@ -274,10 +401,10 @@ export class MutterBacklightBackend extends DisplayController {
                 new GLib.Variant('(usi)', [entry.serial, String(entry.connector), rawValue]),
                 {cancellable}
             );
-            debugLog(`NovusDayNight: Set ${entry.connector} brightness to ${clampedPct}% via Mutter D-Bus`);
+            debugLog(`Set ${entry.connector} brightness to ${clampedPct}% via Mutter D-Bus`);
             return true;
         } catch (e) {
-            debugWarn(`NovusDayNight: Mutter SetBacklight failed for ${entry.connector}: ${e.message}`);
+            debugWarn(`Mutter SetBacklight failed for ${entry.connector}: ${e.message}`);
             return false;
         }
     }
@@ -334,7 +461,7 @@ export class PowerScreenBackend extends DisplayController {
             );
             return true;
         } catch (e) {
-            debugWarn(`NovusDayNight: SettingsDaemon.Power Brightness write failed: ${e.message}`);
+            debugWarn(`SettingsDaemon.Power Brightness write failed: ${e.message}`);
             return false;
         }
     }
@@ -405,7 +532,7 @@ export class DdcServiceBackend extends DisplayController {
             const [, rawDisplays, errorStatus, errorMessage] = reply.recursiveUnpack();
             if (!Array.isArray(rawDisplays) || rawDisplays.length === 0) {
                 if (errorStatus !== 0)
-                    debugWarn(`NovusDayNight: DdcutilService Detect error ${errorStatus}: ${errorMessage}`);
+                    debugWarn(`DdcutilService Detect error ${errorStatus}: ${errorMessage}`);
                 return [];
             }
 
@@ -457,7 +584,7 @@ export class DdcServiceBackend extends DisplayController {
 
             return detected;
         } catch (e) {
-            debugWarn(`NovusDayNight: DdcutilService Detect failed: ${e.message}`);
+            debugWarn(`DdcutilService Detect failed: ${e.message}`);
             return [];
         }
     }
@@ -494,7 +621,7 @@ export class DdcServiceBackend extends DisplayController {
             const pct = Math.round((currentVal / maxVal) * 100);
             return Math.max(0, Math.min(100, pct));
         } catch (e) {
-            debugWarn(`NovusDayNight: DdcutilService GetVcp failed for ${this.displayInfo.name}: ${e.message}`);
+            debugWarn(`DdcutilService GetVcp failed for ${this.displayInfo.name}: ${e.message}`);
             return null;
         }
     }
@@ -528,12 +655,12 @@ export class DdcServiceBackend extends DisplayController {
                 [errStatus, errMsg] = await tryWrite(false);
 
             if (errStatus !== 0) {
-                debugWarn(`NovusDayNight: DdcutilService SetVcp error ${errStatus}: ${errMsg}`);
+                debugWarn(`DdcutilService SetVcp error ${errStatus}: ${errMsg}`);
                 return false;
             }
             return true;
         } catch (e) {
-            debugWarn(`NovusDayNight: DdcutilService SetVcp failed for ${this.displayInfo.name}: ${e.message}`);
+            debugWarn(`DdcutilService SetVcp failed for ${this.displayInfo.name}: ${e.message}`);
             return false;
         }
     }
@@ -550,19 +677,19 @@ export class DdcServiceBackend extends DisplayController {
 export async function probeDisplayController(monitor, settings, cancellable = null) {
     const mutter = new MutterBacklightBackend(monitor, settings);
     if (await mutter.isAvailable(cancellable)) {
-        debugLog(`NovusDayNight: ${monitor.name} -> Mutter.DisplayConfig D-Bus`);
+        debugLog(`${monitor.name} -> Mutter.DisplayConfig D-Bus`);
         return mutter;
     }
 
     if (isBuiltinMonitor(monitor)) {
         const power = new PowerScreenBackend(settings);
         if (await power.isAvailable(cancellable)) {
-            debugLog(`NovusDayNight: ${monitor.name} -> SettingsDaemon.Power D-Bus`);
+            debugLog(`${monitor.name} -> SettingsDaemon.Power D-Bus`);
             return power;
         }
         return mutter;
     }
 
-    debugLog(`NovusDayNight: ${monitor.name} -> com.ddcutil.DdcutilService D-Bus`);
+    debugLog(`${monitor.name} -> com.ddcutil.DdcutilService D-Bus`);
     return new DdcServiceBackend(monitor, settings);
 }

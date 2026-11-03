@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Novus DayNight 2.0\n"
-"Report-Msgid-Bugs-To: https://github.com/SGC-NOVUS/novus-daynight/issues\n"
+"Report-Msgid-Bugs-To: https://github.com/SGC-NOVUS/novus-tools/issues\n"
 "POT-Creation-Date: 2026-10-31 19:00+0200\n"
 "PO-Revision-Date: 2026-10-31 19:00+0200\n"
 "Last-Translator: SGC-NOVUS\n"
@@ -1160,6 +1160,179 @@ msgstr "Не налаштована в ядрі (статус: %s). Вкажіт
 
 msgid "Not configured"
 msgstr "Не налаштована"
+
+msgid "Manage how power and sleep options appear in the GNOME Quick Settings panel."
+msgstr "Керування відображенням профілів живлення та кнопок сну на панелі швидких налаштувань GNOME."
+
+msgid "Prolonged Inactivity Sleep Type on AC Power"
+msgstr "Тип сну під час бездіяльності від мережі"
+
+msgid "Whether to sleep or hibernate after inactivity timeout while plugged in"
+msgstr "Переходити у сплячий режим або гібернацію після таймауту бездіяльності під час живлення від мережі"
+
+msgid "Power & Energy Status"
+msgstr "Живлення та енергоспоживання"
+
+msgid "Enable SGC-NOVUS Tools in GNOME Extensions to start automatic switching"
+msgstr "Увімкніть SGC-NOVUS Tools у Розширеннях GNOME для запуску автоматичного перемикання"
+
+msgid "Use 24-hour HH:MM format (e.g. 07:00 or 19:30)"
+msgstr "Використовуйте 24-годинний формат ГГ:ХХ (наприклад, 07:00 або 19:30)"
+
+msgid "Analyzing…"
+msgstr "Аналіз…"
+
+msgid "Sync Icon Theme with Day / Night"
+msgstr "Синхронізувати тему іконок із Днем / Ніччю"
+
+msgid "Switch icon packs (e.g. Papirus-Light / Papirus-Dark) automatically"
+msgstr "Автоматично перемикати набори іконок (наприклад, Papirus-Light / Papirus-Dark)"
+
+msgid "Light Icon Theme"
+msgstr "Світла тема іконок"
+
+msgid "Icon theme to use during the day"
+msgstr "Тема іконок для денного часу"
+
+msgid "Dark Icon Theme"
+msgstr "Темна тема іконок"
+
+msgid "Icon theme to use at night"
+msgstr "Тема іконок для нічного часу"
+
+msgid "Night Light Color Temperature (K)"
+msgstr "Колірна температура Нічного світла (K)"
+
+msgid "Lower Kelvin values produce a warmer amber tint (1700K–4700K)"
+msgstr "Менші значення Кельвін дають тепліший бурштиновий відтінок (1700K–4700K)"
+
+msgid "Battery Health & Power Draw"
+msgstr "Здоров'я батареї та енергоспоживання"
+
+msgid "Analyzing battery telemetry…"
+msgstr "Аналіз телеметрії батареї…"
+
+msgid "Power Draw"
+msgstr "Споживання"
+
+msgid "Health"
+msgstr "Здоров'я"
+
+msgid "Cycles"
+msgstr "Цикли"
+
+msgid "Keep Awake (Caffeine)"
+msgstr "Не засинати (Кофеїн)"
+
+msgid "Show Keep Awake (Caffeine) in Quick Settings"
+msgstr "Показувати «Не засинати (Кофеїн)» у швидких налаштуваннях"
+
+msgid "Prevent screen blanking and automatic system sleep from the top bar menu"
+msgstr "Блокувати вимкнення екрана та перехід у сплячий режим із верхнього меню"
+
+msgid "Keep Awake Duration"
+msgstr "Тривалість режиму «Не засинати»"
+
+msgid "Default duration before Keep Awake automatically turns off"
+msgstr "Час за замовчуванням до автоматичного вимкнення блокування сну"
+
+msgid "Indefinitely (Until turned off)"
+msgstr "Безстроково (доки не вимкнено вручну)"
+
+msgid "hour"
+msgstr "година"
+
+msgid "hours"
+msgstr "години"
+
+msgid "Auto 60 Hz Refresh Rate on Battery / Saver"
+msgstr "Автозниження частоти до 60 Гц від батареї та в енергозбереженні"
+
+msgid "Automatically reduce high refresh rate displays (120/144/165 Hz) to 60 Hz in Power Saver or on battery"
+msgstr "Автоматично знижувати частоту екрана (120/144/165 Гц) до 60 Гц для економії заряду"
+
+msgid "Automate Keyboard Backlight"
+msgstr "Автоматизація підсвічування клавіатури"
+
+msgid "Turn on keyboard backlight at night and off during daytime via UPower D-Bus"
+msgstr "Вмикати підсвічування клавіатури вночі та вимикати вдень через UPower D-Bus"
+
+msgid "Night Keyboard Backlight Level (%)"
+msgstr "Рівень підсвічування клавіатури вночі (%)"
+
+msgid "Target keyboard backlight brightness at night"
+msgstr "Цільова яскравість підсвічування клавіатури в нічному режимі"
+
+msgid "Turn Off Keyboard Backlight in Power Saver"
+msgstr "Вимикати підсвічування клавіатури в енергозбереженні"
+
+msgid "Extinguish keyboard LEDs when Power Saver profile is active"
+msgstr "Гасити підсвічування клавіатури під час активації профілю енергозбереження"
+
+msgid "Hybrid Sleep"
+msgstr "Гібридний сон"
+
+msgid "Suspend then Hibernate"
+msgstr "Сон із переходом у гібернацію"
+
+msgid "Prefer Suspend-then-Hibernate"
+msgstr "Надавати перевагу «Сон із переходом у гібернацію»"
+
+msgid "Use systemd SuspendThenHibernate for sleep actions when supported by the system"
+msgstr "Використовувати режим SuspendThenHibernate для дій сну, якщо підтримується системою"
+
+msgid "Configuration Backup & Restore"
+msgstr "Резервне копіювання та відновлення налаштувань"
+
+msgid "Export your settings to a JSON file, restore from a backup, or reset to factory defaults."
+msgstr "Експорт налаштувань у JSON-файл, відновлення з резервної копії або скидання за замовчуванням."
+
+msgid "Export Configuration"
+msgstr "Експорт конфігурації"
+
+msgid "Save all current preferences to a portable JSON file"
+msgstr "Зберегти всі поточні налаштування у переносний файл JSON"
+
+msgid "Export…"
+msgstr "Експорт…"
+
+msgid "Configuration exported successfully"
+msgstr "Конфігурацію успішно експортовано"
+
+msgid "Failed to write configuration file"
+msgstr "Не вдалося записати файл конфігурації"
+
+msgid "Import Configuration"
+msgstr "Імпорт конфігурації"
+
+msgid "Load and apply settings from a previously exported JSON file"
+msgstr "Завантажити та застосувати налаштування з раніше збереженого файлу JSON"
+
+msgid "Import…"
+msgstr "Імпорт…"
+
+msgid "JSON Configuration Files"
+msgstr "Файли конфігурації JSON"
+
+msgid "Imported %d settings successfully"
+msgstr "Успішно імпортовано параметрів: %d"
+
+msgid "Invalid configuration file"
+msgstr "Некоректний файл конфігурації"
+
+msgid "Reset All Settings"
+msgstr "Скинути всі налаштування"
+
+msgid "Restore all extension preferences to their factory defaults"
+msgstr "Відновити всі налаштування розширення до значень за замовчуванням"
+
+msgid "Reset Defaults"
+msgstr "Скинути"
+
+msgid "All settings restored to defaults"
+msgstr "Усі налаштування скинуто до значень за замовчуванням"
+
+
 
 
 

@@ -125,7 +125,7 @@ export class BrightnessSliderRow {
             this._originalBrightness = current ?? fallbackValue;
             return this._originalBrightness;
         }).catch(e => {
-            debugWarn(`NovusDayNight: Failed to read brightness before preview: ${e.message}`);
+            debugWarn(`Failed to read brightness before preview: ${e.message}`);
             this._originalBrightness = fallbackValue;
             return this._originalBrightness;
         });
@@ -210,7 +210,7 @@ export class BrightnessSliderRow {
             this._lastPreviewPromise = this._controller.setBrightness(target);
             await this._lastPreviewPromise;
         } catch (e) {
-            debugWarn(`NovusDayNight: Preview setBrightness error: ${e.message}`);
+            debugWarn(`Preview setBrightness error: ${e.message}`);
         }
 
         this._brightnessInFlight = false;
@@ -269,13 +269,13 @@ export class BrightnessSliderRow {
 
         try {
             await this._controller.setBrightness(brightnessToRestore);
-            debugLog(`NovusDayNight: Restored brightness on ${this._monitorName}`);
+            debugLog(`Restored brightness on ${this._monitorName}`);
             this._toastHost?.add_toast(new Adw.Toast({
                 title: _('Brightness restored on %s').replace('%s', this._monitorName),
                 timeout: 2,
             }));
         } catch (e) {
-            debugWarn(`NovusDayNight: Failed to restore brightness on ${this._monitorName}: ${e.message}`);
+            debugWarn(`Failed to restore brightness on ${this._monitorName}: ${e.message}`);
             this._toastHost?.add_toast(new Adw.Toast({
                 title: _('Failed to restore brightness on %s').replace('%s', this._monitorName),
                 timeout: 3,

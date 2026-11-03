@@ -1,11 +1,15 @@
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
-import {DBUS_INTERFACE_NAME, DBUS_OBJECT_PATH} from '../constants.js';
+import {
+    DBUS_INTERFACE_NAME,
+    DBUS_OBJECT_PATH,
+    SHELL_BUS_NAME,
+    STANDALONE_BUS_NAME,
+} from '../constants.js';
 import {debugLog} from '../logger.js';
 
 const BUS_CANDIDATES = [
-    'org.gnome.Shell',
-    'fun.sgc_novus.NovusDayNight',
+    SHELL_BUS_NAME,
+    STANDALONE_BUS_NAME,
 ];
 
 function callBusMethod(busName, methodName, parameters, timeoutMs, cancellable) {
@@ -65,6 +69,6 @@ export async function triggerExtensionAction(settings, methodName, parameters = 
         }
     }
 
-    debugLog(`NovusDayNight: Extension D-Bus offline for ${methodName}; updated GSettings`);
+    debugLog(`Extension D-Bus offline for ${methodName}; updated GSettings`);
     return false;
 }

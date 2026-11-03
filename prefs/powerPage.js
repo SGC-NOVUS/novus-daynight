@@ -1,7 +1,6 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
-import GObject from 'gi://GObject';
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {
     BATTERY_STATE_CHARGING,
@@ -31,23 +30,44 @@ function getScenarioProfileOptions() {
     ];
 }
 
-const TIMEOUT_OPTIONS = [
-    {seconds: 60, label: '1 ' + _('minute')},
-    {seconds: 120, label: '2 ' + _('minutes')},
-    {seconds: 180, label: '3 ' + _('minutes')},
-    {seconds: 300, label: '5 ' + _('minutes')},
-    {seconds: 600, label: '10 ' + _('minutes')},
-    {seconds: 900, label: '15 ' + _('minutes')},
-    {seconds: 1800, label: '30 ' + _('minutes')},
-    {seconds: 0, label: _('Never')},
-];
+function getTimeoutOptions() {
+    return [
+        {seconds: 60, label: `1 ${_('minute')}`},
+        {seconds: 120, label: `2 ${_('minutes')}`},
+        {seconds: 180, label: `3 ${_('minutes')}`},
+        {seconds: 300, label: `5 ${_('minutes')}`},
+        {seconds: 600, label: `10 ${_('minutes')}`},
+        {seconds: 900, label: `15 ${_('minutes')}`},
+        {seconds: 1800, label: `30 ${_('minutes')}`},
+        {seconds: 0, label: _('Never')},
+    ];
+}
 
-const SLEEP_ACTION_OPTIONS = [
-    {id: 'suspend', label: _('Suspend (Sleep)')},
-    {id: 'hibernate', label: _('Hibernate')},
-    {id: 'blank', label: _('Turn Off Display')},
-    {id: 'nothing', label: _('Do Nothing')},
-];
+function getLidActionOptions() {
+    return [
+        {id: 'suspend', label: _('Suspend (Sleep)')},
+        {id: 'hibernate', label: _('Hibernate')},
+        {id: 'blank', label: _('Turn Off Display')},
+        {id: 'nothing', label: _('Do Nothing')},
+    ];
+}
+
+function getSleepTypeOptions() {
+    return [
+        {id: 'suspend', label: _('Suspend (Sleep)')},
+        {id: 'hibernate', label: _('Hibernate')},
+        {id: 'nothing', label: _('Do Nothing')},
+    ];
+}
+
+function getCaffeineDurationOptions() {
+    return [
+        {seconds: 0, label: _('Indefinitely (Until turned off)')},
+        {seconds: 1800, label: `30 ${_('minutes')}`},
+        {seconds: 3600, label: `1 ${_('hour')}`},
+        {seconds: 7200, label: `2 ${_('hours')}`},
+    ];
+}
 
 function createModelFromList(list) {
     const model = new Gtk.StringList();
@@ -61,8 +81,8 @@ function getIndexForId(list, targetId) {
     return idx >= 0 ? idx : 0;
 }
 
-function getIndexForSeconds(seconds) {
-    const idx = TIMEOUT_OPTIONS.findIndex(item => item.seconds === seconds);
+function getIndexForSeconds(list, seconds) {
+    const idx = list.findIndex(item => item.seconds === seconds);
     return idx >= 0 ? idx : 4;
 }
 
@@ -75,29 +95,109 @@ function formatBytes(kbytes) {
     return `${(mb / 1024).toFixed(1)} GB`;
 }
 
-export function createPowerPage(window, settings) {
-    const signalIds = [];
-    const powerController = new PowerController(settings);
-    const swapHibernateController = new SwapHibernateController(settings);
+function formatDurationSeconds(seconds) {
+    if (!seconds || seconds <= 0)
+        return '';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    if (hours > 0)
+        return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+}
+
+function addPrefixIcon(row, iconName) {
+    const image = new Gtk.Image({icon_name: iconName});
+    row.add_prefix(image);
+    return image;
+}
+
+export function createPowerPage(_window, settings) {
+    const powerController = new PowerController(settings, {enableAutomation: false});
+    const swapHibernateController = new SwapHibernateController(settings, {autoRefreshSwap: true});
 
     let gsdPowerSettings = null;
     try {
         gsdPowerSettings = new Gio.Settings({schema_id: 'org.gnome.settings-daemon.plugins.power'});
     } catch {
-        // GSD Power settings unavailable
+        // GSD Power settings unavailable on this system
     }
 
     const profileOptions = getProfileOptions();
     const scenarioOptions = getScenarioProfileOptions();
+    const timeoutOptions = getTimeoutOptions();
+    const lidActionOptions = getLidActionOptions();
+    const sleepTypeOptions = getSleepTypeOptions();
+    const caffeineDurationOptions = getCaffeineDurationOptions();
 
     const page = new Adw.PreferencesPage({
         title: _('Power'),
         icon_name: 'power-profile-balanced-symbolic',
     });
 
-    // ==========================================
-    // 1. Quick Settings Group
-    // ==========================================
+    const statusGroup = new Adw.PreferencesGroup({
+        title: _('Live Telemetry & D-Bus Control'),
+        description: _('Real-time connection status to power-profiles-daemon and UPower.'),
+    });
+    page.add(statusGroup);
+
+    const activeProfileRow = new Adw.ActionRow({
+        title: _('Current Active Profile'),
+        subtitle: _('Unknown'),
+    });
+    const activeProfileIcon = addPrefixIcon(activeProfileRow, 'power-profile-balanced-symbolic');
+    statusGroup.add(activeProfileRow);
+
+    const profileSwitchBox = new Gtk.Box({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        valign: Gtk.Align.CENTER,
+        css_classes: ['linked'],
+    });
+
+    const perfBtn = new Gtk.Button({
+        icon_name: 'power-profile-performance-symbolic',
+        tooltip_text: _('Performance'),
+    });
+    perfBtn.connect('clicked', () => powerController.setActiveProfile(POWER_PROFILE_PERFORMANCE));
+
+    const balBtn = new Gtk.Button({
+        icon_name: 'power-profile-balanced-symbolic',
+        tooltip_text: _('Balanced'),
+    });
+    balBtn.connect('clicked', () => powerController.setActiveProfile(POWER_PROFILE_BALANCED));
+
+    const saveBtn = new Gtk.Button({
+        icon_name: 'power-profile-power-saver-symbolic',
+        tooltip_text: _('Power Saver'),
+    });
+    saveBtn.connect('clicked', () => powerController.setActiveProfile(POWER_PROFILE_POWER_SAVER));
+
+    profileSwitchBox.append(perfBtn);
+    profileSwitchBox.append(balBtn);
+    profileSwitchBox.append(saveBtn);
+    activeProfileRow.add_suffix(profileSwitchBox);
+
+    const powerSourceRow = new Adw.ActionRow({
+        title: _('Power Source & Battery'),
+        subtitle: _('Reading telemetry…'),
+    });
+    const powerSourceIcon = addPrefixIcon(powerSourceRow, 'battery-good-symbolic');
+    statusGroup.add(powerSourceRow);
+
+    const batteryHealthRow = new Adw.ActionRow({
+        title: _('Battery Health & Power Draw'),
+        subtitle: _('Analyzing battery telemetry…'),
+        visible: false,
+    });
+    addPrefixIcon(batteryHealthRow, 'utilities-system-monitor-symbolic');
+    statusGroup.add(batteryHealthRow);
+
+    const activeScenarioRow = new Adw.ActionRow({
+        title: _('Active Scenario'),
+        subtitle: _('Standard / Manual control'),
+    });
+    const activeScenarioIcon = addPrefixIcon(activeScenarioRow, 'emblem-system-symbolic');
+    statusGroup.add(activeScenarioRow);
+
     const quickGroup = new Adw.PreferencesGroup({
         title: _('Quick Settings Menu'),
         description: _('Manage how power and sleep options appear in the GNOME Quick Settings panel.'),
@@ -108,26 +208,51 @@ export function createPowerPage(window, settings) {
         title: _('Show Power Profiles in Quick Settings'),
         subtitle: _('Display Performance, Balanced, and Power Saver buttons in the menu'),
     });
-    settings.bind('enable-power-profiles', enableRow, 'active', 0);
+    addPrefixIcon(enableRow, 'power-profile-balanced-symbolic');
+    settings.bind('enable-power-profiles', enableRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     quickGroup.add(enableRow);
 
     const quickHibRow = new Adw.SwitchRow({
         title: _('Show Hibernate Action in Quick Settings'),
         subtitle: _('One-click button to hibernate the system from the menu'),
     });
-    settings.bind('show-quick-hibernate', quickHibRow, 'active', 0);
+    addPrefixIcon(quickHibRow, 'weather-snow-symbolic');
+    settings.bind('show-quick-hibernate', quickHibRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     quickGroup.add(quickHibRow);
 
     const quickSuspRow = new Adw.SwitchRow({
         title: _('Show Suspend Action in Quick Settings'),
         subtitle: _('One-click button to put the system to sleep from the menu'),
     });
-    settings.bind('show-quick-suspend', quickSuspRow, 'active', 0);
+    addPrefixIcon(quickSuspRow, 'weather-clear-night-symbolic');
+    settings.bind('show-quick-suspend', quickSuspRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     quickGroup.add(quickSuspRow);
 
-    // ==========================================
-    // 2. Smart Power Scenarios (AC / Battery / Thresholds)
-    // ==========================================
+    const quickCaffeineRow = new Adw.SwitchRow({
+        title: _('Show Keep Awake (Caffeine) in Quick Settings'),
+        subtitle: _('Prevent screen blanking and automatic system sleep from the top bar menu'),
+    });
+    addPrefixIcon(quickCaffeineRow, 'my-caffeine-on-symbolic');
+    settings.bind('show-quick-caffeine', quickCaffeineRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    quickGroup.add(quickCaffeineRow);
+
+    const caffeineDurIdx = Math.max(
+        0,
+        caffeineDurationOptions.findIndex(o => o.seconds === settings.get_int('caffeine-default-duration'))
+    );
+    const caffeineDurRow = new Adw.ComboRow({
+        title: _('Keep Awake Duration'),
+        subtitle: _('Default duration before Keep Awake automatically turns off'),
+        model: createModelFromList(caffeineDurationOptions),
+        selected: caffeineDurIdx,
+    });
+    addPrefixIcon(caffeineDurRow, 'preferences-system-time-symbolic');
+    caffeineDurRow.connect('notify::selected', () => {
+        const secs = caffeineDurationOptions[caffeineDurRow.selected]?.seconds ?? 0;
+        settings.set_int('caffeine-default-duration', secs);
+    });
+    quickGroup.add(caffeineDurRow);
+
     const scenariosGroup = new Adw.PreferencesGroup({
         title: _('Smart Power Scenarios (Windows-like Automation)'),
         description: _('Automatically adjust energy profiles and performance according to hardware power states.'),
@@ -138,40 +263,42 @@ export function createPowerPage(window, settings) {
         title: _('Enable Smart Power Scenarios'),
         subtitle: _('Automatically switch profiles based on AC charger connection and battery state'),
     });
-    settings.bind('power-scenarios-enabled', enableScenariosRow, 'active', 0);
+    addPrefixIcon(enableScenariosRow, 'emblem-system-symbolic');
+    settings.bind('power-scenarios-enabled', enableScenariosRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     scenariosGroup.add(enableScenariosRow);
 
-    const acModel = createModelFromList(scenarioOptions);
     const acRow = new Adw.ComboRow({
         title: _('When Plugged In (AC Power)'),
         subtitle: _('Profile to apply when the charger is connected'),
-        model: acModel,
+        model: createModelFromList(scenarioOptions),
+        selected: getIndexForId(scenarioOptions, settings.get_string('power-ac-profile')),
     });
-    acRow.selected = getIndexForId(scenarioOptions, settings.get_string('power-ac-profile'));
-    signalIds.push(acRow.connect('notify::selected', () => {
+    addPrefixIcon(acRow, 'ac-adapter-symbolic');
+    acRow.connect('notify::selected', () => {
         const selected = scenarioOptions[acRow.selected]?.id || POWER_PROFILE_PERFORMANCE;
         settings.set_string('power-ac-profile', selected);
-    }));
+    });
     scenariosGroup.add(acRow);
 
-    const batModel = createModelFromList(scenarioOptions);
     const batRow = new Adw.ComboRow({
         title: _('When on Battery Power'),
         subtitle: _('Profile to apply when running on battery'),
-        model: batModel,
+        model: createModelFromList(scenarioOptions),
+        selected: getIndexForId(scenarioOptions, settings.get_string('power-battery-profile')),
     });
-    batRow.selected = getIndexForId(scenarioOptions, settings.get_string('power-battery-profile'));
-    signalIds.push(batRow.connect('notify::selected', () => {
+    addPrefixIcon(batRow, 'battery-good-symbolic');
+    batRow.connect('notify::selected', () => {
         const selected = scenarioOptions[batRow.selected]?.id || POWER_PROFILE_BALANCED;
         settings.set_string('power-battery-profile', selected);
-    }));
+    });
     scenariosGroup.add(batRow);
 
     const lowBatRow = new Adw.SwitchRow({
         title: _('Low Battery Auto Saver'),
         subtitle: _('Automatically switch to Power Saver when battery level drops below threshold'),
     });
-    settings.bind('power-low-battery-enabled', lowBatRow, 'active', 0);
+    addPrefixIcon(lowBatRow, 'battery-caution-symbolic');
+    settings.bind('power-low-battery-enabled', lowBatRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     scenariosGroup.add(lowBatRow);
 
     const thresholdRow = new Adw.SpinRow({
@@ -185,9 +312,10 @@ export function createPowerPage(window, settings) {
             value: settings.get_int('power-low-battery-threshold'),
         }),
     });
-    signalIds.push(thresholdRow.connect('notify::value', () => {
+    addPrefixIcon(thresholdRow, 'battery-low-symbolic');
+    thresholdRow.connect('notify::value', () => {
         settings.set_int('power-low-battery-threshold', Math.round(thresholdRow.value));
-    }));
+    });
     scenariosGroup.add(thresholdRow);
 
     const syncScenarioSensitivity = () => {
@@ -197,13 +325,58 @@ export function createPowerPage(window, settings) {
         lowBatRow.sensitive = active;
         thresholdRow.sensitive = active && lowBatRow.active;
     };
-    signalIds.push(enableScenariosRow.connect('notify::active', syncScenarioSensitivity));
-    signalIds.push(lowBatRow.connect('notify::active', syncScenarioSensitivity));
+    enableScenariosRow.connect('notify::active', syncScenarioSensitivity);
+    lowBatRow.connect('notify::active', syncScenarioSensitivity);
     syncScenarioSensitivity();
 
-    // ==========================================
-    // 3. Screen Inactivity & OLED Power Plans
-    // ==========================================
+    const scheduleGroup = new Adw.PreferencesGroup({
+        title: _('Day / Night Schedule Automation'),
+        description: _('Synchronize energy profiles with solar or custom Day/Night periods.'),
+    });
+    page.add(scheduleGroup);
+
+    const autoSwitchRow = new Adw.SwitchRow({
+        title: _('Automate by Day / Night Schedule'),
+        subtitle: _('Switch power profiles when Day or Night transitions trigger'),
+    });
+    addPrefixIcon(autoSwitchRow, 'alarm-symbolic');
+    settings.bind('auto-power-profile-schedule', autoSwitchRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    scheduleGroup.add(autoSwitchRow);
+
+    const lightRow = new Adw.ComboRow({
+        title: _('Day Mode Profile'),
+        subtitle: _('Energy profile to apply during daytime'),
+        model: createModelFromList(profileOptions),
+        selected: getIndexForId(profileOptions, settings.get_string('light-power-profile')),
+    });
+    addPrefixIcon(lightRow, 'weather-clear-symbolic');
+    lightRow.connect('notify::selected', () => {
+        const selectedId = profileOptions[lightRow.selected]?.id || POWER_PROFILE_BALANCED;
+        settings.set_string('light-power-profile', selectedId);
+    });
+    scheduleGroup.add(lightRow);
+
+    const darkRow = new Adw.ComboRow({
+        title: _('Night Mode Profile'),
+        subtitle: _('Energy profile to apply during nighttime (e.g. quiet fan operation)'),
+        model: createModelFromList(profileOptions),
+        selected: getIndexForId(profileOptions, settings.get_string('dark-power-profile')),
+    });
+    addPrefixIcon(darkRow, 'weather-clear-night-symbolic');
+    darkRow.connect('notify::selected', () => {
+        const selectedId = profileOptions[darkRow.selected]?.id || POWER_PROFILE_POWER_SAVER;
+        settings.set_string('dark-power-profile', selectedId);
+    });
+    scheduleGroup.add(darkRow);
+
+    const syncScheduleSensitivity = () => {
+        const active = autoSwitchRow.active;
+        lightRow.sensitive = active;
+        darkRow.sensitive = active;
+    };
+    autoSwitchRow.connect('notify::active', syncScheduleSensitivity);
+    syncScheduleSensitivity();
+
     const displayPlansGroup = new Adw.PreferencesGroup({
         title: _('Power Plans: Display & Inactivity'),
         description: _('Fine-tune display blanking and screen timeout behavior for each power state.'),
@@ -214,54 +387,103 @@ export function createPowerPage(window, settings) {
         title: _('Adaptive Screen Inactivity Timeout'),
         subtitle: _('Automatically adjust screen blank delay based on whether you are on AC or Battery'),
     });
-    settings.bind('power-profile-screen-timeouts', enableTimeoutsRow, 'active', 0);
+    addPrefixIcon(enableTimeoutsRow, 'preferences-desktop-display-symbolic');
+    settings.bind('power-profile-screen-timeouts', enableTimeoutsRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     displayPlansGroup.add(enableTimeoutsRow);
 
-    const timeoutAcModel = createModelFromList(TIMEOUT_OPTIONS);
     const timeoutAcRow = new Adw.ComboRow({
         title: _('Screen Blank on AC Power'),
         subtitle: _('Turn off display after idle time while plugged in'),
-        model: timeoutAcModel,
+        model: createModelFromList(timeoutOptions),
+        selected: getIndexForSeconds(timeoutOptions, settings.get_int('power-screen-timeout-ac')),
     });
-    timeoutAcRow.selected = getIndexForSeconds(settings.get_int('power-screen-timeout-ac'));
-    signalIds.push(timeoutAcRow.connect('notify::selected', () => {
-        const secs = TIMEOUT_OPTIONS[timeoutAcRow.selected]?.seconds ?? 900;
+    addPrefixIcon(timeoutAcRow, 'ac-adapter-symbolic');
+    timeoutAcRow.connect('notify::selected', () => {
+        const secs = timeoutOptions[timeoutAcRow.selected]?.seconds ?? 900;
         settings.set_int('power-screen-timeout-ac', secs);
-    }));
+    });
     displayPlansGroup.add(timeoutAcRow);
 
-    const timeoutBatModel = createModelFromList(TIMEOUT_OPTIONS);
     const timeoutBatRow = new Adw.ComboRow({
         title: _('Screen Blank on Battery'),
         subtitle: _('Turn off display after idle time on battery'),
-        model: timeoutBatModel,
+        model: createModelFromList(timeoutOptions),
+        selected: getIndexForSeconds(timeoutOptions, settings.get_int('power-screen-timeout-battery')),
     });
-    timeoutBatRow.selected = getIndexForSeconds(settings.get_int('power-screen-timeout-battery'));
-    signalIds.push(timeoutBatRow.connect('notify::selected', () => {
-        const secs = TIMEOUT_OPTIONS[timeoutBatRow.selected]?.seconds ?? 300;
+    addPrefixIcon(timeoutBatRow, 'battery-good-symbolic');
+    timeoutBatRow.connect('notify::selected', () => {
+        const secs = timeoutOptions[timeoutBatRow.selected]?.seconds ?? 300;
         settings.set_int('power-screen-timeout-battery', secs);
-    }));
+    });
     displayPlansGroup.add(timeoutBatRow);
 
-    const timeoutSaverModel = createModelFromList(TIMEOUT_OPTIONS);
     const timeoutSaverRow = new Adw.ComboRow({
         title: _('Screen Blank in Power Saver'),
         subtitle: _('Aggressively turn off display during low battery or power saver mode'),
-        model: timeoutSaverModel,
+        model: createModelFromList(timeoutOptions),
+        selected: getIndexForSeconds(timeoutOptions, settings.get_int('power-screen-timeout-saver')),
     });
-    timeoutSaverRow.selected = getIndexForSeconds(settings.get_int('power-screen-timeout-saver'));
-    signalIds.push(timeoutSaverRow.connect('notify::selected', () => {
-        const secs = TIMEOUT_OPTIONS[timeoutSaverRow.selected]?.seconds ?? 120;
+    addPrefixIcon(timeoutSaverRow, 'power-profile-power-saver-symbolic');
+    timeoutSaverRow.connect('notify::selected', () => {
+        const secs = timeoutOptions[timeoutSaverRow.selected]?.seconds ?? 120;
         settings.set_int('power-screen-timeout-saver', secs);
-    }));
+    });
     displayPlansGroup.add(timeoutSaverRow);
 
     const oledRow = new Adw.SwitchRow({
         title: _('OLED / Battery Dark Style Saver'),
         subtitle: _('Force dark mode when in Power Saver to maximize OLED display battery life'),
     });
-    settings.bind('power-sync-oled-dark', oledRow, 'active', 0);
+    addPrefixIcon(oledRow, 'weather-clear-night-symbolic');
+    settings.bind('power-sync-oled-dark', oledRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     displayPlansGroup.add(oledRow);
+
+    const lowHzRow = new Adw.SwitchRow({
+        title: _('Auto 60 Hz Refresh Rate on Battery / Saver'),
+        subtitle: _('Automatically reduce high refresh rate displays (120/144/165 Hz) to 60 Hz in Power Saver or on battery'),
+    });
+    addPrefixIcon(lowHzRow, 'video-display-symbolic');
+    settings.bind('power-auto-low-refresh-rate', lowHzRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    displayPlansGroup.add(lowHzRow);
+
+    const kbdAutoRow = new Adw.SwitchRow({
+        title: _('Automate Keyboard Backlight'),
+        subtitle: _('Turn on keyboard backlight at night and off during daytime via UPower D-Bus'),
+    });
+    addPrefixIcon(kbdAutoRow, 'input-keyboard-symbolic');
+    settings.bind('kbd-backlight-auto', kbdAutoRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    displayPlansGroup.add(kbdAutoRow);
+
+    const kbdLevelRow = new Adw.SpinRow({
+        title: _('Night Keyboard Backlight Level (%)'),
+        subtitle: _('Target keyboard backlight brightness at night'),
+        adjustment: new Gtk.Adjustment({
+            lower: 10,
+            upper: 100,
+            step_increment: 10,
+            page_increment: 25,
+            value: settings.get_int('kbd-backlight-night-level'),
+        }),
+    });
+    addPrefixIcon(kbdLevelRow, 'display-brightness-symbolic');
+    kbdLevelRow.connect('notify::value', () => {
+        settings.set_int('kbd-backlight-night-level', Math.round(kbdLevelRow.value));
+    });
+    displayPlansGroup.add(kbdLevelRow);
+
+    const kbdSaverOffRow = new Adw.SwitchRow({
+        title: _('Turn Off Keyboard Backlight in Power Saver'),
+        subtitle: _('Extinguish keyboard LEDs when Power Saver profile is active'),
+    });
+    addPrefixIcon(kbdSaverOffRow, 'power-profile-power-saver-symbolic');
+    settings.bind('kbd-backlight-off-in-saver', kbdSaverOffRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    displayPlansGroup.add(kbdSaverOffRow);
+
+    const syncKbdSensitivity = () => {
+        kbdLevelRow.sensitive = kbdAutoRow.active;
+    };
+    kbdAutoRow.connect('notify::active', syncKbdSensitivity);
+    syncKbdSensitivity();
 
     const syncTimeoutSensitivity = () => {
         const active = enableTimeoutsRow.active;
@@ -269,12 +491,9 @@ export function createPowerPage(window, settings) {
         timeoutBatRow.sensitive = active;
         timeoutSaverRow.sensitive = active;
     };
-    signalIds.push(enableTimeoutsRow.connect('notify::active', syncTimeoutSensitivity));
+    enableTimeoutsRow.connect('notify::active', syncTimeoutSensitivity);
     syncTimeoutSensitivity();
 
-    // ==========================================
-    // 4. Laptop Lid & Sleep Actions (GNOME Power Daemon)
-    // ==========================================
     if (gsdPowerSettings) {
         const lidGroup = new Adw.PreferencesGroup({
             title: _('Laptop Lid & Inactivity Sleep Actions'),
@@ -282,86 +501,59 @@ export function createPowerPage(window, settings) {
         });
         page.add(lidGroup);
 
-        const lidAcModel = createModelFromList(SLEEP_ACTION_OPTIONS);
         const lidAcRow = new Adw.ComboRow({
             title: _('Lid Close on AC Power'),
             subtitle: _('Action when closing laptop lid while plugged in'),
-            model: lidAcModel,
+            model: createModelFromList(lidActionOptions),
+            selected: getIndexForId(lidActionOptions, gsdPowerSettings.get_string('lid-close-ac-action')),
         });
-        lidAcRow.selected = getIndexForId(SLEEP_ACTION_OPTIONS, gsdPowerSettings.get_string('lid-close-ac-action'));
-        signalIds.push(lidAcRow.connect('notify::selected', () => {
-            const action = SLEEP_ACTION_OPTIONS[lidAcRow.selected]?.id || 'suspend';
+        addPrefixIcon(lidAcRow, 'ac-adapter-symbolic');
+        lidAcRow.connect('notify::selected', () => {
+            const action = lidActionOptions[lidAcRow.selected]?.id || 'suspend';
             gsdPowerSettings.set_string('lid-close-ac-action', action);
-        }));
+        });
         lidGroup.add(lidAcRow);
 
-        const lidBatModel = createModelFromList(SLEEP_ACTION_OPTIONS);
         const lidBatRow = new Adw.ComboRow({
             title: _('Lid Close on Battery'),
             subtitle: _('Action when closing laptop lid on battery'),
-            model: lidBatModel,
+            model: createModelFromList(lidActionOptions),
+            selected: getIndexForId(lidActionOptions, gsdPowerSettings.get_string('lid-close-battery-action')),
         });
-        lidBatRow.selected = getIndexForId(SLEEP_ACTION_OPTIONS, gsdPowerSettings.get_string('lid-close-battery-action'));
-        signalIds.push(lidBatRow.connect('notify::selected', () => {
-            const action = SLEEP_ACTION_OPTIONS[lidBatRow.selected]?.id || 'suspend';
+        addPrefixIcon(lidBatRow, 'battery-good-symbolic');
+        lidBatRow.connect('notify::selected', () => {
+            const action = lidActionOptions[lidBatRow.selected]?.id || 'suspend';
             gsdPowerSettings.set_string('lid-close-battery-action', action);
-        }));
+        });
         lidGroup.add(lidBatRow);
 
-        const sleepTypeBatModel = createModelFromList([
-            {id: 'suspend', label: _('Suspend (Sleep)')},
-            {id: 'hibernate', label: _('Hibernate')},
-            {id: 'nothing', label: _('Do Nothing')},
-        ]);
+        const sleepTypeAcRow = new Adw.ComboRow({
+            title: _('Prolonged Inactivity Sleep Type on AC Power'),
+            subtitle: _('Whether to sleep or hibernate after inactivity timeout while plugged in'),
+            model: createModelFromList(sleepTypeOptions),
+            selected: getIndexForId(sleepTypeOptions, gsdPowerSettings.get_string('sleep-inactive-ac-type')),
+        });
+        addPrefixIcon(sleepTypeAcRow, 'preferences-system-time-symbolic');
+        sleepTypeAcRow.connect('notify::selected', () => {
+            const val = sleepTypeOptions[sleepTypeAcRow.selected]?.id || 'nothing';
+            gsdPowerSettings.set_string('sleep-inactive-ac-type', val);
+        });
+        lidGroup.add(sleepTypeAcRow);
+
         const sleepTypeBatRow = new Adw.ComboRow({
             title: _('Prolonged Inactivity Sleep Type on Battery'),
             subtitle: _('Whether to sleep or hibernate after inactivity timeout'),
-            model: sleepTypeBatModel,
+            model: createModelFromList(sleepTypeOptions),
+            selected: getIndexForId(sleepTypeOptions, gsdPowerSettings.get_string('sleep-inactive-battery-type')),
         });
-        sleepTypeBatRow.selected = getIndexForId(SLEEP_ACTION_OPTIONS, gsdPowerSettings.get_string('sleep-inactive-battery-type'));
-        signalIds.push(sleepTypeBatRow.connect('notify::selected', () => {
-            const val = SLEEP_ACTION_OPTIONS[sleepTypeBatRow.selected]?.id || 'suspend';
+        addPrefixIcon(sleepTypeBatRow, 'preferences-system-time-symbolic');
+        sleepTypeBatRow.connect('notify::selected', () => {
+            const val = sleepTypeOptions[sleepTypeBatRow.selected]?.id || 'suspend';
             gsdPowerSettings.set_string('sleep-inactive-battery-type', val);
-        }));
+        });
         lidGroup.add(sleepTypeBatRow);
     }
 
-    // ==========================================
-    // 5. Swap Memory Status & Telemetry
-    // ==========================================
-    const swapGroup = new Adw.PreferencesGroup({
-        title: _('Swap Memory Management'),
-        description: _('Swap space usage and kernel paging aggressiveness (/proc/swaps).'),
-    });
-    page.add(swapGroup);
-
-    const swapUsageRow = new Adw.ActionRow({
-        title: _('Swap Space Usage'),
-        subtitle: _('Reading swap information…'),
-    });
-    swapGroup.add(swapUsageRow);
-
-    const swappinessRow = new Adw.ActionRow({
-        title: _('Kernel Swappiness (vm.swappiness)'),
-        subtitle: _('Loading…'),
-    });
-    swapGroup.add(swappinessRow);
-
-    const swapDeviceRow = new Adw.ActionRow({
-        title: _('Active Swap Device'),
-        subtitle: _('None'),
-    });
-    swapGroup.add(swapDeviceRow);
-
-    const swapHealthRow = new Adw.ActionRow({
-        title: _('Hibernation Memory Capacity'),
-        subtitle: _('Analyzing…'),
-    });
-    swapGroup.add(swapHealthRow);
-
-    // ==========================================
-    // 6. Hibernation Diagnostics & Emergency Trigger
-    // ==========================================
     const hibGroup = new Adw.PreferencesGroup({
         title: _('Hibernation & Deep Sleep'),
         description: _('Systemd login1 hibernation state, resume partition, and emergency fallback.'),
@@ -372,6 +564,7 @@ export function createPowerPage(window, settings) {
         title: _('Systemd Hibernation Capability'),
         subtitle: _('Checking systemd login1…'),
     });
+    const hibStatusIcon = addPrefixIcon(hibStatusRow, 'weather-snow-symbolic');
     hibGroup.add(hibStatusRow);
 
     const hibActionBox = new Gtk.Box({
@@ -380,18 +573,39 @@ export function createPowerPage(window, settings) {
         valign: Gtk.Align.CENTER,
     });
     const hibTestBtn = new Gtk.Button({
-        label: _('Hibernate Now'),
-        icon_name: 'weather-snow-symbolic',
+        child: new Adw.ButtonContent({
+            icon_name: 'weather-snow-symbolic',
+            label: _('Hibernate Now'),
+        }),
     });
     hibTestBtn.connect('clicked', () => swapHibernateController.hibernate(true));
     hibActionBox.append(hibTestBtn);
+
+    const hybridSleepBtn = new Gtk.Button({
+        child: new Adw.ButtonContent({
+            icon_name: 'weather-clear-night-symbolic',
+            label: _('Hybrid Sleep'),
+        }),
+    });
+    hybridSleepBtn.connect('clicked', () => swapHibernateController.hybridSleep(true));
+    hibActionBox.append(hybridSleepBtn);
+
     hibStatusRow.add_suffix(hibActionBox);
+
+    const preferSthRow = new Adw.SwitchRow({
+        title: _('Prefer Suspend-then-Hibernate'),
+        subtitle: _('Use systemd SuspendThenHibernate for sleep actions when supported by the system'),
+    });
+    addPrefixIcon(preferSthRow, 'weather-clear-night-symbolic');
+    settings.bind('prefer-suspend-then-hibernate', preferSthRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    hibGroup.add(preferSthRow);
 
     const critHibRow = new Adw.SwitchRow({
         title: _('Emergency Auto-Hibernate on Critical Battery'),
         subtitle: _('Save session state to swap and hibernate when battery is almost exhausted'),
     });
-    settings.bind('power-critical-battery-hibernate', critHibRow, 'active', 0);
+    addPrefixIcon(critHibRow, 'battery-empty-symbolic');
+    settings.bind('power-critical-battery-hibernate', critHibRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     hibGroup.add(critHibRow);
 
     const critThreshRow = new Adw.SpinRow({
@@ -405,122 +619,75 @@ export function createPowerPage(window, settings) {
             value: settings.get_int('power-critical-battery-threshold'),
         }),
     });
-    signalIds.push(critThreshRow.connect('notify::value', () => {
+    addPrefixIcon(critThreshRow, 'dialog-warning-symbolic');
+    critThreshRow.connect('notify::value', () => {
         settings.set_int('power-critical-battery-threshold', Math.round(critThreshRow.value));
-    }));
+    });
     hibGroup.add(critThreshRow);
 
-    signalIds.push(critHibRow.connect('notify::active', () => {
+    critHibRow.connect('notify::active', () => {
         critThreshRow.sensitive = critHibRow.active;
-    }));
+    });
     critThreshRow.sensitive = critHibRow.active;
 
-    // ==========================================
-    // 7. Day / Night Schedule Automation
-    // ==========================================
-    const scheduleGroup = new Adw.PreferencesGroup({
-        title: _('Day / Night Schedule Automation'),
-        description: _('Synchronize energy profiles with solar or custom Day/Night periods.'),
+    const swapGroup = new Adw.PreferencesGroup({
+        title: _('Swap Memory Management'),
+        description: _('Swap space usage and kernel paging aggressiveness (/proc/swaps).'),
     });
-    page.add(scheduleGroup);
-
-    const autoSwitchRow = new Adw.SwitchRow({
-        title: _('Automate by Day / Night Schedule'),
-        subtitle: _('Switch power profiles when Day or Night transitions trigger'),
-    });
-    settings.bind('auto-power-profile-schedule', autoSwitchRow, 'active', 0);
-    scheduleGroup.add(autoSwitchRow);
-
-    const lightModel = createModelFromList(profileOptions);
-    const lightRow = new Adw.ComboRow({
-        title: _('Day Mode Profile'),
-        subtitle: _('Energy profile to apply during daytime'),
-        model: lightModel,
-    });
-    lightRow.selected = getIndexForId(profileOptions, settings.get_string('light-power-profile'));
-    signalIds.push(lightRow.connect('notify::selected', () => {
-        const selectedId = profileOptions[lightRow.selected]?.id || POWER_PROFILE_BALANCED;
-        settings.set_string('light-power-profile', selectedId);
-    }));
-    scheduleGroup.add(lightRow);
-
-    const darkModel = createModelFromList(profileOptions);
-    const darkRow = new Adw.ComboRow({
-        title: _('Night Mode Profile'),
-        subtitle: _('Energy profile to apply during nighttime (e.g. quiet fan operation)'),
-        model: darkModel,
-    });
-    darkRow.selected = getIndexForId(profileOptions, settings.get_string('dark-power-profile'));
-    signalIds.push(darkRow.connect('notify::selected', () => {
-        const selectedId = profileOptions[darkRow.selected]?.id || POWER_PROFILE_POWER_SAVER;
-        settings.set_string('dark-power-profile', selectedId);
-    }));
-    scheduleGroup.add(darkRow);
-
-    const syncScheduleSensitivity = () => {
-        const active = autoSwitchRow.active;
-        lightRow.sensitive = active;
-        darkRow.sensitive = active;
-    };
-    signalIds.push(autoSwitchRow.connect('notify::active', syncScheduleSensitivity));
-    syncScheduleSensitivity();
-
-    // ==========================================
-    // 8. Live Telemetry & D-Bus Diagnostics
-    // ==========================================
-    const statusGroup = new Adw.PreferencesGroup({
-        title: _('Live Telemetry & D-Bus Control'),
-        description: _('Real-time connection status to power-profiles-daemon and UPower.'),
-    });
-    page.add(statusGroup);
-
-    const powerSourceRow = new Adw.ActionRow({
-        title: _('Power Source & Battery'),
-        subtitle: _('Reading telemetry…'),
-    });
-    statusGroup.add(powerSourceRow);
-
-    const activeScenarioRow = new Adw.ActionRow({
-        title: _('Active Scenario'),
-        subtitle: _('Manual / Default'),
-    });
-    statusGroup.add(activeScenarioRow);
-
-    const activeProfileRow = new Adw.ActionRow({
-        title: _('Current Active Profile'),
-        subtitle: _('Unknown'),
-    });
-    statusGroup.add(activeProfileRow);
-
-    // Live quick switch buttons
-    const testBox = new Gtk.Box({
-        orientation: Gtk.Orientation.HORIZONTAL,
-        spacing: 8,
+    const refreshSwapBtn = new Gtk.Button({
+        icon_name: 'view-refresh-symbolic',
         valign: Gtk.Align.CENTER,
+        tooltip_text: _('Refresh'),
+        css_classes: ['flat'],
     });
-
-    const perfBtn = new Gtk.Button({
-        label: _('Performance'),
-        icon_name: 'power-profile-performance-symbolic',
+    refreshSwapBtn.connect('clicked', () => {
+        swapHibernateController.refreshSwapStats();
     });
-    perfBtn.connect('clicked', () => powerController.setActiveProfile(POWER_PROFILE_PERFORMANCE));
+    swapGroup.set_header_suffix(refreshSwapBtn);
+    page.add(swapGroup);
 
-    const balBtn = new Gtk.Button({
-        label: _('Balanced'),
-        icon_name: 'power-profile-balanced-symbolic',
+    const swapUsageRow = new Adw.ActionRow({
+        title: _('Swap Space Usage'),
+        subtitle: _('Reading swap information…'),
     });
-    balBtn.connect('clicked', () => powerController.setActiveProfile(POWER_PROFILE_BALANCED));
-
-    const saveBtn = new Gtk.Button({
-        label: _('Power Saver'),
-        icon_name: 'power-profile-power-saver-symbolic',
+    addPrefixIcon(swapUsageRow, 'drive-harddisk-symbolic');
+    const swapLevelBar = new Gtk.LevelBar({
+        min_value: 0,
+        max_value: 100,
+        value: 0,
+        valign: Gtk.Align.CENTER,
+        width_request: 110,
     });
-    saveBtn.connect('clicked', () => powerController.setActiveProfile(POWER_PROFILE_POWER_SAVER));
+    swapUsageRow.add_suffix(swapLevelBar);
+    swapGroup.add(swapUsageRow);
 
-    testBox.append(perfBtn);
-    testBox.append(balBtn);
-    testBox.append(saveBtn);
-    activeProfileRow.add_suffix(testBox);
+    const swappinessRow = new Adw.ActionRow({
+        title: _('Kernel Swappiness (vm.swappiness)'),
+        subtitle: _('Loading…'),
+    });
+    addPrefixIcon(swappinessRow, 'applications-system-symbolic');
+    swapGroup.add(swappinessRow);
+
+    const swapDeviceRow = new Adw.ActionRow({
+        title: _('Active Swap Device'),
+        subtitle: _('None'),
+    });
+    addPrefixIcon(swapDeviceRow, 'drive-multidisk-symbolic');
+    swapGroup.add(swapDeviceRow);
+
+    const swapHealthRow = new Adw.ActionRow({
+        title: _('Hibernation Memory Capacity'),
+        subtitle: _('Analyzing…'),
+    });
+    const swapHealthIcon = addPrefixIcon(swapHealthRow, 'dialog-information-symbolic');
+    swapGroup.add(swapHealthRow);
+
+    const setButtonActiveStyle = (btn, isActive) => {
+        if (isActive)
+            btn.add_css_class('suggested-action');
+        else
+            btn.remove_css_class('suggested-action');
+    };
 
     const updateDaemonUI = () => {
         const isAvail = powerController.isAvailable();
@@ -530,49 +697,90 @@ export function createPowerPage(window, settings) {
         const bState = powerController.getBatteryState();
         const hasBat = powerController.hasBattery();
 
-        // Power Source Telemetry
         if (hasBat) {
             let stateStr = '';
-            if (bState === BATTERY_STATE_CHARGING)
+            let timeStr = '';
+            if (bState === BATTERY_STATE_CHARGING) {
                 stateStr = _('Charging');
-            else if (bState === BATTERY_STATE_DISCHARGING)
+                timeStr = formatDurationSeconds(powerController.getTimeToFull());
+                powerSourceIcon.set_from_icon_name('battery-full-charging-symbolic');
+            } else if (bState === BATTERY_STATE_DISCHARGING) {
                 stateStr = _('Discharging');
-            else if (bState === BATTERY_STATE_FULLY_CHARGED)
+                timeStr = formatDurationSeconds(powerController.getTimeToEmpty());
+                powerSourceIcon.set_from_icon_name(
+                    pct <= 20 ? 'battery-caution-symbolic' : 'battery-good-symbolic'
+                );
+            } else if (bState === BATTERY_STATE_FULLY_CHARGED) {
                 stateStr = _('Fully charged');
+                powerSourceIcon.set_from_icon_name('battery-full-charged-symbolic');
+            } else {
+                powerSourceIcon.set_from_icon_name(
+                    onBat ? 'battery-good-symbolic' : 'ac-adapter-symbolic'
+                );
+            }
 
-            const stateTag = stateStr ? ` (${stateStr})` : '';
+            const details = [stateStr, timeStr].filter(Boolean).join(' • ');
+            const stateTag = details ? ` (${details})` : '';
             powerSourceRow.subtitle = onBat
-                ? `🔋 ${_('On Battery')}: ${pct}%${stateTag}`
-                : `🔌 ${_('Connected to AC Charger')}: ${pct}%${stateTag}`;
+                ? `${_('On Battery')}: ${pct}%${stateTag}`
+                : `${_('Connected to AC Charger')}: ${pct}%${stateTag}`;
+
+            const rateWatts = powerController.getEnergyRate();
+            const healthPct = powerController.getBatteryHealth();
+            const cycles = powerController.getChargeCycles();
+            const healthParts = [];
+            if (rateWatts > 0)
+                healthParts.push(`${_('Power Draw')}: ${rateWatts.toFixed(1)} W`);
+            if (healthPct > 0)
+                healthParts.push(`${_('Health')}: ${healthPct}%`);
+            if (cycles > 0)
+                healthParts.push(`${_('Cycles')}: ${cycles}`);
+
+            batteryHealthRow.visible = healthParts.length > 0;
+            if (healthParts.length > 0)
+                batteryHealthRow.subtitle = healthParts.join(' • ');
         } else {
-            powerSourceRow.subtitle = `🔌 ${_('Desktop / AC Power (No battery detected)')}`;
+            powerSourceIcon.set_from_icon_name('ac-adapter-symbolic');
+            powerSourceRow.subtitle = _('Desktop / AC Power (No battery detected)');
+            batteryHealthRow.visible = false;
         }
 
-        // Scenario status
         const lastScen = powerController.getLastScenario();
-        if (lastScen === 'low-battery')
-            activeScenarioRow.subtitle = `⚠️ ${_('Low Battery Threshold triggered')}`;
-        else if (lastScen === 'battery')
-            activeScenarioRow.subtitle = `🔋 ${_('Battery Scenario active')}`;
-        else if (lastScen === 'ac')
-            activeScenarioRow.subtitle = `🔌 ${_('AC Power Scenario active')}`;
-        else
+        if (lastScen === 'low-battery') {
+            activeScenarioIcon.set_from_icon_name('dialog-warning-symbolic');
+            activeScenarioRow.subtitle = _('Low Battery Threshold triggered');
+        } else if (lastScen === 'battery') {
+            activeScenarioIcon.set_from_icon_name('battery-good-symbolic');
+            activeScenarioRow.subtitle = _('Battery Scenario active');
+        } else if (lastScen === 'ac') {
+            activeScenarioIcon.set_from_icon_name('ac-adapter-symbolic');
+            activeScenarioRow.subtitle = _('AC Power Scenario active');
+        } else {
+            activeScenarioIcon.set_from_icon_name('emblem-system-symbolic');
             activeScenarioRow.subtitle = _('Standard / Manual control');
+        }
 
-        // Active profile
         let profileName = _('Not set');
-        if (active === POWER_PROFILE_PERFORMANCE)
+        if (active === POWER_PROFILE_PERFORMANCE) {
             profileName = _('Performance (Maximum Power)');
-        else if (active === POWER_PROFILE_BALANCED)
+            activeProfileIcon.set_from_icon_name('power-profile-performance-symbolic');
+        } else if (active === POWER_PROFILE_BALANCED) {
             profileName = _('Balanced');
-        else if (active === POWER_PROFILE_POWER_SAVER)
+            activeProfileIcon.set_from_icon_name('power-profile-balanced-symbolic');
+        } else if (active === POWER_PROFILE_POWER_SAVER) {
             profileName = _('Power Saver (Maximum Battery Life)');
+            activeProfileIcon.set_from_icon_name('power-profile-power-saver-symbolic');
+        }
 
         activeProfileRow.subtitle = profileName;
 
         perfBtn.sensitive = isAvail;
         balBtn.sensitive = isAvail;
         saveBtn.sensitive = isAvail;
+
+        setButtonActiveStyle(perfBtn, active === POWER_PROFILE_PERFORMANCE);
+        setButtonActiveStyle(balBtn, active === POWER_PROFILE_BALANCED);
+        setButtonActiveStyle(saveBtn, active === POWER_PROFILE_POWER_SAVER);
     };
 
     const updateSwapHibUI = () => {
@@ -580,11 +788,13 @@ export function createPowerPage(window, settings) {
         const canHib = swapHibernateController.canHibernate();
         const rawHib = swapHibernateController.getHibernateCapabilityRaw();
 
-        // Swap stats
         if (swap.totalKb > 0) {
             swapUsageRow.subtitle = `${formatBytes(swap.totalKb)} ${_('total')} • ${formatBytes(swap.usedKb)} ${_('used')} (${swap.percent}%) • ${formatBytes(swap.freeKb)} ${_('free')}`;
+            swapLevelBar.visible = true;
+            swapLevelBar.value = Math.min(100, Math.max(0, swap.percent));
         } else {
-            swapUsageRow.subtitle = `⚠️ ${_('No swap partition or file detected')}`;
+            swapUsageRow.subtitle = _('No swap partition or file detected');
+            swapLevelBar.visible = false;
         }
 
         swappinessRow.subtitle = `${swap.swappiness} (${swap.swappiness <= 20 ? _('Low - favors RAM over disk') : _('Default kernel paging')})`;
@@ -596,24 +806,35 @@ export function createPowerPage(window, settings) {
             swapDeviceRow.subtitle = _('No active swap devices');
         }
 
-        // Swap vs RAM for hibernation
-        if (swap.totalKb >= swap.memTotalKb) {
-            swapHealthRow.subtitle = `✅ ${_('Swap size (%s) is greater than RAM (%s) — optimal for full memory dumps').replace('%s', formatBytes(swap.totalKb)).replace('%s', formatBytes(swap.memTotalKb))}`;
+        if (swap.totalKb >= swap.memTotalKb && swap.memTotalKb > 0) {
+            swapHealthIcon.set_from_icon_name('emblem-ok-symbolic');
+            swapHealthRow.subtitle = _('Swap size (%s) is greater than RAM (%s) — optimal for full memory dumps')
+                .replace('%s', formatBytes(swap.totalKb))
+                .replace('%s', formatBytes(swap.memTotalKb));
         } else if (swap.totalKb > 0) {
-            swapHealthRow.subtitle = `⚠️ ${_('Swap size (%s) is smaller than RAM (%s). Recommended to enlarge swap for reliable hibernation.').replace('%s', formatBytes(swap.totalKb)).replace('%s', formatBytes(swap.memTotalKb))}`;
+            swapHealthIcon.set_from_icon_name('dialog-warning-symbolic');
+            swapHealthRow.subtitle = _('Swap size (%s) is smaller than RAM (%s). Recommended to enlarge swap for reliable hibernation.')
+                .replace('%s', formatBytes(swap.totalKb))
+                .replace('%s', formatBytes(swap.memTotalKb));
         } else {
-            swapHealthRow.subtitle = `❌ ${_('Swap space is required for hibernation.')}`;
+            swapHealthIcon.set_from_icon_name('dialog-error-symbolic');
+            swapHealthRow.subtitle = _('Swap space is required for hibernation.');
         }
 
-        // Hibernate status
         if (canHib) {
-            hibStatusRow.subtitle = `✅ ${_('Ready (Kernel & systemd support active)')}`;
+            hibStatusIcon.set_from_icon_name('emblem-ok-symbolic');
+            hibStatusRow.subtitle = _('Ready (Kernel & systemd support active)');
             hibTestBtn.sensitive = true;
         } else {
             const devName = swap.devices.length > 0 ? swap.devices[0].filename : 'swap';
-            hibStatusRow.subtitle = `⚠️ ${_('Not configured in kernel (Status: %s). Configure resume=%s in GRUB.').replace('%s', rawHib).replace('%s', devName)}`;
+            hibStatusIcon.set_from_icon_name('dialog-warning-symbolic');
+            hibStatusRow.subtitle = _('Not configured in kernel (Status: %s). Configure resume=%s in GRUB.')
+                .replace('%s', rawHib)
+                .replace('%s', devName);
             hibTestBtn.sensitive = false;
         }
+        hybridSleepBtn.sensitive = swapHibernateController.canHybridSleep();
+        preferSthRow.sensitive = swapHibernateController.canSuspendThenHibernate();
     };
 
     const removePowerListener = powerController.addChangeListener(updateDaemonUI);
@@ -627,13 +848,6 @@ export function createPowerPage(window, settings) {
         destroy() {
             removePowerListener();
             removeSwapListener();
-            for (const id of signalIds) {
-                try {
-                    GObject.signal_handler_disconnect(window, id);
-                } catch {
-                    // Ignore
-                }
-            }
             powerController.destroy();
             swapHibernateController.destroy();
         },

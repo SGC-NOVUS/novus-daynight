@@ -36,11 +36,15 @@ export class MonitorConfigDialog {
         this._debounceTimers = new Map();
     }
 
-    show() {
+    present() {
         this._createDialog();
         this._buildContent();
         this._dialog.present();
         this._loadMonitors();
+    }
+
+    show() {
+        this.present();
     }
 
     _createDialog() {
@@ -283,7 +287,7 @@ export class MonitorConfigDialog {
                 timeout: 3,
             }));
         } catch (e) {
-            debugWarn(`NovusDayNight: Monitor detection failed: ${e.message}`);
+            debugWarn(`Monitor detection failed: ${e.message}`);
         } finally {
             this._detectionInProgress = false;
             if (this._refreshButton)
@@ -416,7 +420,7 @@ export class MonitorConfigDialog {
                 this._attachSliders(expander, monitor, controller);
             })
             .catch(e => {
-                debugWarn(`NovusDayNight: Could not probe controller for ${monitor.name}: ${e.message}`);
+                debugWarn(`Could not probe controller for ${monitor.name}: ${e.message}`);
             });
 
         return expander;
@@ -496,9 +500,9 @@ export class MonitorConfigDialog {
 
             this._persistCurrentMonitors();
             this._renderMonitors(Array.from(this._monitors.values()));
-            debugLog(`NovusDayNight: Initialized ${state.name} at ${baseBrightness}%`);
+            debugLog(`Initialized ${state.name} at ${baseBrightness}%`);
         } catch (e) {
-            debugWarn(`NovusDayNight: Failed to initialize ${state.name}: ${e.message}`);
+            debugWarn(`Failed to initialize ${state.name}: ${e.message}`);
             button.sensitive = true;
             button.label = _('Initialize…');
         }

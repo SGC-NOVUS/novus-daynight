@@ -7,32 +7,30 @@ import system from 'system';
 import {
     DBUS_INTERFACE_NAME,
     DBUS_OBJECT_PATH,
+    EXTENSION_DBUS_IFACE_XML,
+    LOGIN1_BUS_NAME,
+    LOGIN1_MANAGER_INTERFACE,
+    LOGIN1_OBJECT_PATH,
     MS_PER_SECOND,
     RESUME_DELAY_SECONDS,
+    SHELL_BUS_NAME,
+    STANDALONE_BUS_NAME,
 } from '../constants.js';
 import {BrightnessController} from '../brightnessController.js';
 import {ThemeController} from '../themeController.js';
 import {PowerController} from '../powerController.js';
 import {SolarCalculator} from '../solarCalculator.js';
-import {TimeCalculator, resolveScheduleState, secondsUntilEvent} from '../timeCalculator.js';
+import {
+    TimeCalculator,
+    formatSolarTimesForDebug,
+    resolveScheduleState,
+    resolveScheduledTimes,
+    secondsUntilEvent,
+} from '../timeCalculator.js';
 import {debugLog, debugWarn, setDebugLogging} from '../logger.js';
 
 const DOMAIN = 'novus-daynight';
 const SCHEMA_ID = 'org.gnome.shell.extensions.novus-daynight';
-const STANDALONE_BUS_NAME = 'fun.sgc_novus.NovusDayNight';
-
-const NovusDayNightIface = `
-<node>
-    <interface name="${DBUS_INTERFACE_NAME}">
-        <method name="GetDebugInfo">
-            <arg type="s" direction="out" name="info"/>
-        </method>
-        <method name="ForceThemeSwitch">
-            <arg type="b" direction="in" name="isDark"/>
-        </method>
-        <method name="ResetToAutomatic"/>
-    </interface>
-</node>`;
 
 function resolveRootDir() {
     const scriptFile = Gio.File.new_for_uri(import.meta.url);
@@ -118,7 +116,7 @@ function syncXfconfOverDBus({theme}) {
 function isGnomeExtensionAlreadyOwningService() {
     return new Promise(resolve => {
         Gio.DBus.session.call(
-            'org.gnome.Shell',
+            SHELL_BUS_NAME,
             DBUS_OBJECT_PATH,
             DBUS_INTERFACE_NAME,
             'GetDebugInfo',
@@ -167,6 +165,8 @@ class StandaloneDaemon {
     }
 
     _applyScheduledPowerProfile(isDark) {
+        this._powerController?.applyScheduledKbdBacklight(isDark);
+
         if (!this._settings || !this._settings.get_boolean('auto-power-profile-schedule'))
             return;
 
@@ -218,10 +218,12 @@ class StandaloneDaemon {
     }
 
     _exportDBus() {
-        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(NovusDayNightIface, {
+        this._dbusImpl = Gio.DBusExportedObject.wrapJSObject(EXTENSION_DBUS_IFACE_XML, {
             GetDebugInfo: () => this.getDebugInfo(),
             ForceThemeSwitch: isDark => this.forceThemeSwitch(isDark),
             ResetToAutomatic: () => this.resetToAutomatic(),
+            SetCaffeine: (enabled, durationSeconds) =>
+                this._powerController?.setCaffeine(Boolean(enabled), Number(durationSeconds) || 0),
         });
         this._dbusImpl.export(Gio.DBus.session, DBUS_OBJECT_PATH);
 
@@ -270,10 +272,10 @@ class StandaloneDaemon {
 
     _setupSuspendResumeHandler() {
         this._suspendSignalId = Gio.DBus.system.signal_subscribe(
-            'org.freedesktop.login1',
-            'org.freedesktop.login1.Manager',
+            LOGIN1_BUS_NAME,
+            LOGIN1_MANAGER_INTERFACE,
             'PrepareForSleep',
-            '/org/freedesktop/login1',
+            LOGIN1_OBJECT_PATH,
             null,
             Gio.DBusSignalFlags.NONE,
             (_conn, _sender, _path, _iface, _signal, params) => {
@@ -299,55 +301,12 @@ class StandaloneDaemon {
     }
 
     _resolveTimes(now) {
-        const latitude = this._settings.get_string('manual-latitude');
-        const longitude = this._settings.get_string('manual-longitude');
-        let lightTime = null;
-        let darkTime = null;
-        let solarTimes = null;
-        let lightModeTrigger = 'custom';
-        let darkModeTrigger = 'custom';
-
-        const hasCoordinates = Boolean(
-            latitude && longitude && this._solarCalculator.validateCoordinates(latitude, longitude)
+        return resolveScheduledTimes(
+            this._settings,
+            this._solarCalculator,
+            this._timeCalculator,
+            now
         );
-
-        if (hasCoordinates) {
-            solarTimes = this._solarCalculator.getSolarTimes(now, latitude, longitude);
-            if (solarTimes) {
-                lightModeTrigger = this._settings.get_string('light-mode-trigger');
-                lightTime = this._timeCalculator.parseTriggerTime(
-                    lightModeTrigger,
-                    solarTimes,
-                    now,
-                    'light',
-                    this._settings
-                );
-
-                darkModeTrigger = this._settings.get_string('dark-mode-trigger');
-                darkTime = this._timeCalculator.parseTriggerTime(
-                    darkModeTrigger,
-                    solarTimes,
-                    now,
-                    'dark',
-                    this._settings
-                );
-            }
-        }
-
-        if (!lightTime || !darkTime) {
-            lightTime = this._timeCalculator.parseCustomTime(
-                this._settings.get_string('custom-light-time'),
-                now
-            );
-            darkTime = this._timeCalculator.parseCustomTime(
-                this._settings.get_string('custom-dark-time'),
-                now
-            );
-            lightModeTrigger = 'custom';
-            darkModeTrigger = 'custom';
-        }
-
-        return {lightTime, darkTime, lightModeTrigger, darkModeTrigger, solarTimes};
     }
 
     _scheduleNextChangeEvent() {
@@ -461,33 +420,10 @@ class StandaloneDaemon {
             ? this._solarCalculator.getSolarTimes(tomorrow, latitude, longitude)
             : null;
 
-        const formatDate = d =>
-            d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
-        const fmtSolar = (times, d) => {
-            if (!times)
-                return null;
-            return {
-                date: formatDate(d),
-                firstLight: times.first_light?.toLocaleTimeString() || 'N/A',
-                nauticalDawn: times.nautical_dawn?.toLocaleTimeString() || 'N/A',
-                dawn: times.dawn?.toLocaleTimeString() || 'N/A',
-                sunrise: times.sunrise?.toLocaleTimeString() || 'N/A',
-                sunriseEnd: times.sunrise_end?.toLocaleTimeString() || 'N/A',
-                goldenHourEnd: times.golden_hour_end?.toLocaleTimeString() || 'N/A',
-                solarNoon: times.solar_noon?.toLocaleTimeString() || 'N/A',
-                goldenHour: times.golden_hour?.toLocaleTimeString() || 'N/A',
-                sunsetStart: times.sunset_start?.toLocaleTimeString() || 'N/A',
-                sunset: times.sunset?.toLocaleTimeString() || 'N/A',
-                dusk: times.dusk?.toLocaleTimeString() || 'N/A',
-                nauticalDusk: times.nautical_dusk?.toLocaleTimeString() || 'N/A',
-                lastLight: times.last_light?.toLocaleTimeString() || 'N/A',
-            };
-        };
-
         const prev = this._debugInfo ?? {};
         this._debugInfo = {
-            solarTimesToday: fmtSolar(solarTimes, now),
-            solarTimesTomorrow: fmtSolar(tomorrowSolar, tomorrow),
+            solarTimesToday: formatSolarTimesForDebug(solarTimes, now),
+            solarTimesTomorrow: formatSolarTimesForDebug(tomorrowSolar, tomorrow),
             currentTime: now.toLocaleString(),
             lightTime: lightTime ? lightTime.toLocaleString() : 'N/A',
             darkTime: darkTime ? darkTime.toLocaleString() : 'N/A',
@@ -504,6 +440,14 @@ class StandaloneDaemon {
             timezone: this._solarCalculator.getTimezone(),
             calculationMethod: solarTimes ? 'Solar events (local calculation)' : 'Custom times',
             brightness: brightnessInfo,
+            power: {
+                available: Boolean(this._powerController?.isAvailable()),
+                activeProfile: this._powerController?.getActiveProfile() || 'N/A',
+                hasBattery: Boolean(this._powerController?.hasBattery()),
+                onBattery: Boolean(this._powerController?.isOnBattery()),
+                batteryPercentage: this._powerController?.getBatteryPercentage() ?? 100,
+                lastScenario: this._powerController?.getLastScenario() || 'manual',
+            },
         };
     }
 
@@ -513,6 +457,16 @@ class StandaloneDaemon {
             info.secondsToNextEvent = secondsUntilEvent(info.nextEventTimestamp, Date.now());
         info.manualModeActive = this._manualModeActive;
         info.manualModeIsDark = this._manualModeIsDark;
+        if (this._powerController) {
+            info.power = {
+                available: this._powerController.isAvailable(),
+                activeProfile: this._powerController.getActiveProfile() || 'N/A',
+                hasBattery: this._powerController.hasBattery(),
+                onBattery: this._powerController.isOnBattery(),
+                batteryPercentage: this._powerController.getBatteryPercentage(),
+                lastScenario: this._powerController.getLastScenario() || 'manual',
+            };
+        }
         return JSON.stringify(info);
     }
 
@@ -578,7 +532,7 @@ export async function runDaemonCli(argv) {
     const once = argv.includes('--once');
 
     if (!force && !once && await isGnomeExtensionAlreadyOwningService()) {
-        print('Novus DayNight: GNOME Shell extension Novus_Tools@sgc-novus.fun is active; daemon skipped.');
+        print('SGC-NOVUS Tools: GNOME Shell extension Novus_Tools@sgc-novus.fun is active; daemon skipped.');
         return 0;
     }
 

@@ -28,15 +28,11 @@ export function getThemeDirectories() {
         }
     };
 
-    const homeDir = GLib.get_home_dir();
-    addDir(GLib.build_filenamev([homeDir, '.themes']));
-    addDir(GLib.build_filenamev([homeDir, '.local', 'share', 'themes']));
+    addDir(GLib.build_filenamev([GLib.get_home_dir(), '.themes']));
+    addDir(GLib.build_filenamev([GLib.get_user_data_dir(), 'themes']));
 
     for (const dataDir of GLib.get_system_data_dirs())
         addDir(GLib.build_filenamev([dataDir, 'themes']));
-
-    addDir('/usr/share/themes');
-    addDir('/usr/local/share/themes');
 
     return dirs;
 }
@@ -86,11 +82,83 @@ export function getAvailableGtkThemes() {
                     themes.add(name);
             }
         } catch (e) {
-            debugLog(`NovusDayNight: Could not scan theme directory ${dirPath}: ${e.message}`);
+            debugLog(`Could not scan theme directory ${dirPath}: ${e.message}`);
         }
     }
 
     return Array.from(themes).sort((a, b) => a.localeCompare(b));
+}
+
+export function getIconDirectories() {
+    const dirs = [];
+    const seen = new Set();
+    const addDir = path => {
+        if (path && !seen.has(path)) {
+            seen.add(path);
+            dirs.push(path);
+        }
+    };
+
+    addDir(GLib.build_filenamev([GLib.get_home_dir(), '.icons']));
+    addDir(GLib.build_filenamev([GLib.get_user_data_dir(), 'icons']));
+
+    for (const dataDir of GLib.get_system_data_dirs())
+        addDir(GLib.build_filenamev([dataDir, 'icons']));
+
+    return dirs;
+}
+
+export function getAvailableIconThemes() {
+    const themes = new Set(['Adwaita']);
+    const ignored = new Set(['default', 'hicolor', 'locolor']);
+
+    for (const dirPath of getIconDirectories()) {
+        const dir = Gio.File.new_for_path(dirPath);
+        if (!dir.query_exists(null))
+            continue;
+
+        try {
+            const enumerator = dir.enumerate_children(
+                'standard::name,standard::type',
+                Gio.FileQueryInfoFlags.NONE,
+                null
+            );
+
+            let info;
+            while ((info = enumerator.next_file(null))) {
+                const name = info.get_name();
+                if (!name || name.startsWith('.') || ignored.has(name.toLowerCase()))
+                    continue;
+
+                const indexPath = GLib.build_filenamev([dirPath, name, 'index.theme']);
+                if (GLib.file_test(indexPath, GLib.FileTest.EXISTS))
+                    themes.add(name);
+            }
+        } catch (e) {
+            debugLog(`Could not scan icon directory ${dirPath}: ${e.message}`);
+        }
+    }
+
+    return Array.from(themes).sort((a, b) => a.localeCompare(b));
+}
+
+export function inferIconThemePair(iconThemeName, availableIconThemes = null) {
+    const installed = new Set(availableIconThemes ?? getAvailableIconThemes());
+    const findInstalled = (...candidates) =>
+        candidates.find(c => c && installed.has(c)) ?? null;
+
+    if (!iconThemeName) {
+        const light = findInstalled('Yaru', 'Papirus-Light', 'Papirus', 'Adwaita') ?? 'Adwaita';
+        const dark = findInstalled(`${light}-dark`, `${light}-Dark`, 'Papirus-Dark', 'Yaru-dark', light) ?? light;
+        return {light, dark};
+    }
+
+    const suffixMatch = iconThemeName.match(/^(.*?)-(dark|Dark|light|Light)$/);
+    const base = suffixMatch ? suffixMatch[1] : iconThemeName;
+
+    const light = findInstalled(`${base}-Light`, `${base}-light`, base) ?? iconThemeName;
+    const dark = findInstalled(`${base}-Dark`, `${base}-dark`, base) ?? light;
+    return {light, dark};
 }
 
 export function inferThemePair(themeName, availableThemes = null) {
@@ -191,13 +259,16 @@ function unescapeXml(text) {
 export function getAvailableDualWallpapers() {
     const list = [];
     const seenPairs = new Set();
-    const homeDir = GLib.get_home_dir();
+    const seenDirs = new Set();
+    const dirs = [];
 
-    const dirs = [
-        '/usr/share/gnome-background-properties',
-        '/usr/local/share/gnome-background-properties',
-        GLib.build_filenamev([homeDir, '.local', 'share', 'gnome-background-properties']),
-    ];
+    for (const dataDir of [...GLib.get_system_data_dirs(), GLib.get_user_data_dir()]) {
+        const candidate = GLib.build_filenamev([dataDir, 'gnome-background-properties']);
+        if (!seenDirs.has(candidate)) {
+            seenDirs.add(candidate);
+            dirs.push(candidate);
+        }
+    }
 
     const langPrefs = GLib.get_language_names()
         .map(lang => lang.split('.')[0])
@@ -281,7 +352,7 @@ export function getAvailableDualWallpapers() {
                 }
             }
         } catch (e) {
-            debugLog(`NovusDayNight: Could not read wallpaper metadata in ${dirPath}: ${e.message}`);
+            debugLog(`Could not read wallpaper metadata in ${dirPath}: ${e.message}`);
         }
     }
 

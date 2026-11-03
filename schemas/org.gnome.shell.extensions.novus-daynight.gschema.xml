@@ -267,5 +267,55 @@
       <summary>Show Suspend action button in Quick Settings menu</summary>
     </key>
 
+    <key name="sync-icon-theme" type="b">
+      <default>false</default>
+      <summary>Switch icon theme between day and night modes</summary>
+    </key>
+
+    <key name="light-icon-theme" type="s">
+      <default>'Adwaita'</default>
+      <summary>Icon theme used during the day</summary>
+    </key>
+
+    <key name="dark-icon-theme" type="s">
+      <default>'Adwaita'</default>
+      <summary>Icon theme used at night</summary>
+    </key>
+
+    <key name="power-auto-low-refresh-rate" type="b">
+      <default>false</default>
+      <summary>Automatically lower display refresh rate to 60Hz on battery or power-saver</summary>
+    </key>
+
+    <key name="kbd-backlight-auto" type="b">
+      <default>false</default>
+      <summary>Automatically control keyboard backlight based on day/night schedule</summary>
+    </key>
+
+    <key name="kbd-backlight-night-level" type="i">
+      <default>50</default>
+      <summary>Keyboard backlight brightness percentage during night mode</summary>
+    </key>
+
+    <key name="kbd-backlight-off-in-saver" type="b">
+      <default>true</default>
+      <summary>Turn off keyboard backlight when Power Saver profile is active</summary>
+    </key>
+
+    <key name="prefer-suspend-then-hibernate" type="b">
+      <default>false</default>
+      <summary>Use systemd SuspendThenHibernate instead of standard Suspend when supported</summary>
+    </key>
+
+    <key name="show-quick-caffeine" type="b">
+      <default>true</default>
+      <summary>Show Keep Awake (Caffeine) inhibitor controls in Quick Settings</summary>
+    </key>
+
+    <key name="caffeine-default-duration" type="i">
+      <default>0</default>
+      <summary>Default duration in seconds for Keep Awake inhibitor (0 = indefinitely)</summary>
+    </key>
+
   </schema>
 </schemalist>

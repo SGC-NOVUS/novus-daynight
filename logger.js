@@ -1,3 +1,5 @@
+const LOG_PREFIX = '[SGC-NOVUS Tools]';
+
 let _debugEnabled = false;
 
 export function setDebugLogging(enabled) {
@@ -6,10 +8,10 @@ export function setDebugLogging(enabled) {
 
 export function debugLog(...args) {
     if (_debugEnabled)
-        console.log(...args);
+        console.debug(LOG_PREFIX, ...args);
 }
 
 export function debugWarn(...args) {
     if (_debugEnabled)
-        console.warn(...args);
+        console.warn(LOG_PREFIX, ...args);
 }

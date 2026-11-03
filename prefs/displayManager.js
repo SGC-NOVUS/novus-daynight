@@ -63,7 +63,7 @@ export class DisplayManager {
             combined.push(display);
         }
 
-        debugLog(`NovusDayNight: Detected ${combined.length} external monitor(s) via D-Bus`);
+        debugLog(`Detected ${combined.length} external monitor(s) via D-Bus`);
         return combined;
     }
 
@@ -72,7 +72,7 @@ export class DisplayManager {
             const parsed = JSON.parse(this.settings.get_string('monitors'));
             return Array.isArray(parsed) ? parsed : [];
         } catch (e) {
-            debugWarn(`NovusDayNight: Failed to parse cached monitors: ${e.message}`);
+            debugWarn(`Failed to parse cached monitors: ${e.message}`);
             return [];
         }
     }

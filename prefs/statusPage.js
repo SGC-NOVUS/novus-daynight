@@ -9,6 +9,11 @@ import {
     DEBUG_TIME_UPDATE_INTERVAL_SECONDS,
     MS_PER_SECOND,
 } from '../constants.js';
+import {
+    POWER_PROFILE_BALANCED,
+    POWER_PROFILE_PERFORMANCE,
+    POWER_PROFILE_POWER_SAVER,
+} from '../powerController.js';
 import {fetchExtensionDebugInfo, triggerExtensionAction} from './dbusClient.js';
 
 function createValueLabel(initialText = 'N/A') {
@@ -33,6 +38,7 @@ export function createStatusPage(settings) {
     let timeUpdateId = null;
     let debugRefreshId = null;
     let nextEventTimestamp = null;
+    const dynamicMonitorRows = [];
 
     const page = new Adw.PreferencesPage({
         title: _('Status'),
@@ -142,9 +148,6 @@ export function createStatusPage(settings) {
     });
     heroGroup.add(heroRow);
 
-    const scheduleGroup = new Adw.PreferencesGroup({title: _('Schedule Information')});
-    page.add(scheduleGroup);
-
     const addInfoRow = (group, title, iconName = null) => {
         const row = new Adw.ActionRow({title});
         if (iconName)
@@ -155,12 +158,22 @@ export function createStatusPage(settings) {
         return label;
     };
 
+    const scheduleGroup = new Adw.PreferencesGroup({title: _('Schedule Information')});
+    page.add(scheduleGroup);
+
     const currentTimeLabel = addInfoRow(scheduleGroup, _('Current Time'), 'preferences-system-time-symbolic');
     const currentModeLabel = addInfoRow(scheduleGroup, _('Active Period'), 'preferences-desktop-theme-symbolic');
     const lightTimeLabel = addInfoRow(scheduleGroup, _('Light Mode Switch Time'), 'weather-clear-symbolic');
     const darkTimeLabel = addInfoRow(scheduleGroup, _('Dark Mode Switch Time'), 'weather-clear-night-symbolic');
     const timeToNextLabel = addInfoRow(scheduleGroup, _('Time Until Next Switch'), 'alarm-symbolic');
     const calculationMethodLabel = addInfoRow(scheduleGroup, _('Calculation Method'), 'emblem-system-symbolic');
+
+    const powerGroup = new Adw.PreferencesGroup({title: _('Power & Energy Status')});
+    page.add(powerGroup);
+
+    const activeProfileLabel = addInfoRow(powerGroup, _('Current Active Profile'), 'power-profile-balanced-symbolic');
+    const powerSourceLabel = addInfoRow(powerGroup, _('Power Source & Battery'), 'battery-good-symbolic');
+    const activeScenarioLabel = addInfoRow(powerGroup, _('Active Scenario'), 'emblem-system-symbolic');
 
     const locationGroup = new Adw.PreferencesGroup({title: _('Location Information')});
     page.add(locationGroup);
@@ -223,16 +236,11 @@ export function createStatusPage(settings) {
         'display-brightness-symbolic'
     );
 
-    const monitorBrightnessContainer = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        spacing: 0,
-    });
-    brightnessGroup.add(new Adw.PreferencesRow({child: monitorBrightnessContainer}));
-
     const brightnessDetailsExpander = new Adw.ExpanderRow({
         title: _('Brightness Details'),
         subtitle: _('Click to expand'),
     });
+    brightnessDetailsExpander.add_prefix(new Gtk.Image({icon_name: 'video-display-symbolic'}));
     brightnessGroup.add(brightnessDetailsExpander);
 
     const brightnessStateLabel = createValueLabel();
@@ -252,14 +260,15 @@ export function createStatusPage(settings) {
         title: _('Debug Logging'),
         subtitle: _('Write verbose diagnostics to the system journal'),
     });
+    debugLoggingRow.add_prefix(new Gtk.Image({icon_name: 'utilities-terminal-symbolic'}));
     settings.bind('debug-logging', debugLoggingRow, 'active', Gio.SettingsBindFlags.DEFAULT);
     diagGroup.add(debugLoggingRow);
 
     const refreshRow = new Adw.ActionRow({
         title: _('Refresh Status'),
         subtitle: _('Update all displayed values immediately'),
-        icon_name: 'view-refresh-symbolic',
     });
+    refreshRow.add_prefix(new Gtk.Image({icon_name: 'view-refresh-symbolic'}));
     const refreshButton = new Gtk.Button({
         label: _('Refresh'),
         valign: Gtk.Align.CENTER,
@@ -269,55 +278,34 @@ export function createStatusPage(settings) {
     diagGroup.add(refreshRow);
 
     const renderMonitorBrightnessList = monitors => {
-        let child;
-        while ((child = monitorBrightnessContainer.get_first_child()))
-            monitorBrightnessContainer.remove(child);
+        for (const row of dynamicMonitorRows)
+            brightnessGroup.remove(row);
+        dynamicMonitorRows.length = 0;
 
         if (!monitors || monitors.length === 0) {
-            const emptyLabel = new Gtk.Label({
-                label: _('No monitors configured'),
-                xalign: 0,
-                margin_top: 6,
-                margin_bottom: 6,
-                margin_start: 12,
-                margin_end: 12,
-                css_classes: ['dim-label'],
+            const emptyRow = new Adw.ActionRow({
+                title: _('No monitors configured'),
             });
-            monitorBrightnessContainer.append(emptyLabel);
+            emptyRow.add_prefix(new Gtk.Image({icon_name: 'video-display-symbolic'}));
+            brightnessGroup.add(emptyRow);
+            dynamicMonitorRows.push(emptyRow);
             return;
         }
 
-        monitors.forEach((monitor, index) => {
-            const box = new Gtk.Box({
-                orientation: Gtk.Orientation.VERTICAL,
-                spacing: 4,
-                margin_top: index === 0 ? 6 : 12,
-                margin_bottom: index === monitors.length - 1 ? 6 : 0,
-                margin_start: 12,
-                margin_end: 12,
-            });
-
-            box.append(new Gtk.Label({
-                label: monitor.name || _('Unknown Monitor'),
-                xalign: 0,
-                wrap: true,
-                css_classes: ['heading'],
-            }));
-
+        for (const monitor of monitors) {
             const detail = _('Light: %s, Dark: %s, Current: %s')
                 .replace('%s', monitor.lightBrightness || 'N/A')
                 .replace('%s', monitor.darkBrightness || 'N/A')
                 .replace('%s', monitor.currentBrightness || 'N/A');
 
-            box.append(new Gtk.Label({
-                label: detail,
-                xalign: 0,
-                wrap: true,
-                css_classes: ['dim-label'],
-            }));
-
-            monitorBrightnessContainer.append(box);
-        });
+            const row = new Adw.ActionRow({
+                title: monitor.name || _('Unknown Monitor'),
+                subtitle: detail,
+            });
+            row.add_prefix(new Gtk.Image({icon_name: 'video-display-symbolic'}));
+            brightnessGroup.add(row);
+            dynamicMonitorRows.push(row);
+        }
     };
 
     const updateSolarSection = (solarData, labels, expander, defaultTitle) => {
@@ -348,7 +336,7 @@ export function createStatusPage(settings) {
             heroTitle.set_label(_('Background Service Offline'));
             heroCountdownLabel.set_label(_('Inactive'));
             heroSubtitle.set_label(
-                _('Enable Novus DayNight in GNOME Extensions to start automatic switching')
+                _('Enable SGC-NOVUS Tools in GNOME Extensions to start automatic switching')
             );
             return;
         }
@@ -415,6 +403,34 @@ export function createStatusPage(settings) {
                 .replace('%d', s);
             setLabelValue(timeToNextLabel, formatted);
             heroCountdownLabel.set_label(formatted);
+        }
+
+        if (debugInfo.power) {
+            const p = debugInfo.power;
+            let profileText = _('Not set');
+            if (p.activeProfile === POWER_PROFILE_PERFORMANCE)
+                profileText = _('Performance');
+            else if (p.activeProfile === POWER_PROFILE_BALANCED)
+                profileText = _('Balanced');
+            else if (p.activeProfile === POWER_PROFILE_POWER_SAVER)
+                profileText = _('Power Saver');
+            setLabelValue(activeProfileLabel, profileText);
+
+            if (p.hasBattery) {
+                const sourceText = p.onBattery ? _('On Battery') : _('Connected to AC Charger');
+                setLabelValue(powerSourceLabel, `${sourceText} (${p.batteryPercentage}%)`);
+            } else {
+                setLabelValue(powerSourceLabel, _('Desktop / AC Power (No battery detected)'));
+            }
+
+            let scenarioText = _('Standard / Manual control');
+            if (p.lastScenario === 'low-battery')
+                scenarioText = _('Low Battery Threshold triggered');
+            else if (p.lastScenario === 'battery')
+                scenarioText = _('Battery Scenario active');
+            else if (p.lastScenario === 'ac')
+                scenarioText = _('AC Power Scenario active');
+            setLabelValue(activeScenarioLabel, scenarioText);
         }
 
         const locText = (debugInfo.locationName && debugInfo.locationName !== 'Not set')

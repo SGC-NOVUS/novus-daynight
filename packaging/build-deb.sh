@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 PKG_NAME="novus-daynight"
-PKG_VERSION="${PKG_VERSION:-1.0.0}"
+PKG_VERSION="${PKG_VERSION:-2.0.0}"
 ARCH="all"
 UUID="Novus_Tools@sgc-novus.fun"
 
@@ -159,7 +159,7 @@ Depends: gjs (>= 1.72), gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-glib-2.0, libglib2.
 Recommends: gir1.2-soup-3.0, gir1.2-geoclue-2.0
 Suggests: gnome-shell (>= 45), ddcutil-service
 Maintainer: SGC-NOVUS (System Generations Core Novus) <support@sgc-novus.fun>
-Homepage: https://github.com/SGC-NOVUS/novus-daynight
+Homepage: https://github.com/SGC-NOVUS/novus-tools
 Description: Desktop environment, display, and power profiles automation suite
  SGC-NOVUS Tools seamlessly coordinates day/night theme transitions,
  dynamic wallpapers, Night Light synchronization, smooth display brightness

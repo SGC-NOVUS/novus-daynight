@@ -23,6 +23,7 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
         this._controller = controller;
         this._powerController = controller.getPowerController();
         this._swapHibernateController = controller.getSwapHibernateController();
+        this._syncingCaffeineSwitch = false;
 
         this.menu.setHeader(
             'preferences-desktop-theme-symbolic',
@@ -30,7 +31,6 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
             _('Theme, display & power management')
         );
 
-        // --- Schedule & Theme Section ---
         this._autoItem = new PopupMenu.PopupImageMenuItem(
             _('Automatic Schedule'),
             'emblem-synchronizing-symbolic'
@@ -52,7 +52,6 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
         this._darkItem.connect('activate', () => this._controller.forceThemeSwitch(true));
         this.menu.addMenuItem(this._darkItem);
 
-        // --- Power Profiles Section ---
         this._powerSeparator = new PopupMenu.PopupSeparatorMenuItem(_('Power Profile'));
         this.menu.addMenuItem(this._powerSeparator);
 
@@ -83,7 +82,22 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
         });
         this.menu.addMenuItem(this._powerSaverItem);
 
-        // --- Sleep & Hibernate Actions ---
+        this._caffeineSeparator = new PopupMenu.PopupSeparatorMenuItem();
+        this.menu.addMenuItem(this._caffeineSeparator);
+
+        this._caffeineSwitchItem = new PopupMenu.PopupSwitchMenuItem(
+            _('Keep Awake (Caffeine)'),
+            false
+        );
+        this._caffeineSwitchItem.connect('toggled', (_item, state) => {
+            if (this._syncingCaffeineSwitch)
+                return;
+            const settings = this._controller.getSettings();
+            const defaultDuration = settings ? settings.get_int('caffeine-default-duration') : 0;
+            this._controller.setCaffeine(state, defaultDuration);
+        });
+        this.menu.addMenuItem(this._caffeineSwitchItem);
+
         this._sleepSeparator = new PopupMenu.PopupSeparatorMenuItem(_('System Sleep'));
         this.menu.addMenuItem(this._sleepSeparator);
 
@@ -92,7 +106,14 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
             'media-playback-pause-symbolic'
         );
         this._suspendItem.connect('activate', () => {
-            this._swapHibernateController?.suspend(true);
+            Main.panel.closeQuickSettings();
+            const settings = this._controller.getSettings();
+            const preferStH = settings?.get_boolean('prefer-suspend-then-hibernate') &&
+                this._swapHibernateController?.canSuspendThenHibernate();
+            if (preferStH)
+                this._swapHibernateController?.suspendThenHibernate(true);
+            else
+                this._swapHibernateController?.suspend(true);
         });
         this.menu.addMenuItem(this._suspendItem);
 
@@ -101,11 +122,11 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
             'weather-snow-symbolic'
         );
         this._hibernateItem.connect('activate', () => {
+            Main.panel.closeQuickSettings();
             this._swapHibernateController?.hibernate(true);
         });
         this.menu.addMenuItem(this._hibernateItem);
 
-        // --- Settings Section ---
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         this._prefsItem = new PopupMenu.PopupImageMenuItem(
@@ -135,6 +156,7 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
 
         const isManual = this._controller.isManualModeActive();
         const isDark = this._controller.isCurrentlyDark();
+        const caffeineActive = Boolean(this._powerController?.isCaffeineActive());
         const icon = isDark ? 'weather-clear-night-symbolic' : 'weather-clear-symbolic';
 
         this.iconName = icon;
@@ -151,18 +173,17 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
         else if (activeProfile === POWER_PROFILE_POWER_SAVER)
             profileLabel = _('Power Saver');
 
-        let pwrIndicator = '';
-        if (this._powerController?.hasBattery()) {
-            const onBat = this._powerController.isOnBattery();
-            const pct = this._powerController.getBatteryPercentage();
-            pwrIndicator = onBat ? `🔋 ${pct}%` : '⚡ AC';
-        }
+        let pwrPrefix = '';
+        if (this._powerController?.hasBattery() && this._powerController.isOnBattery())
+            pwrPrefix = `${this._powerController.getBatteryPercentage()}%`;
 
-        if (profileLabel) {
-            const pwrTag = pwrIndicator ? `${pwrIndicator} • ` : '';
+        if (caffeineActive) {
+            this.subtitle = `${modeWord} • ${_('Keep Awake')}`;
+        } else if (profileLabel) {
+            const prefix = pwrPrefix ? `${pwrPrefix} • ` : `${modeWord} • `;
             this.subtitle = isManual
-                ? `${pwrTag}${modeWord}`
-                : `${pwrTag}${profileLabel}`;
+                ? `${_('Manual')} • ${modeWord}`
+                : `${prefix}${profileLabel}`;
         } else {
             this.subtitle = isManual
                 ? `${_('Manual')} • ${modeWord}`
@@ -185,7 +206,6 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
             isManual && isDark ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE
         );
 
-        // Power profile visibility & check ornaments
         const powerAvailable = this._powerController?.isAvailable();
         const settings = this._controller.getSettings();
         const powerEnabled = settings ? settings.get_boolean('enable-power-profiles') : true;
@@ -214,7 +234,15 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
             );
         }
 
-        // Sleep & Hibernate visibility
+        const showCaffeine = settings ? settings.get_boolean('show-quick-caffeine') : true;
+        this._caffeineSeparator.visible = showCaffeine;
+        this._caffeineSwitchItem.visible = showCaffeine;
+        if (showCaffeine) {
+            this._syncingCaffeineSwitch = true;
+            this._caffeineSwitchItem.setToggleState(caffeineActive);
+            this._syncingCaffeineSwitch = false;
+        }
+
         const showHib = settings ? settings.get_boolean('show-quick-hibernate') : true;
         const showSusp = settings ? settings.get_boolean('show-quick-suspend') : false;
         const showSleepGroup = Boolean(showHib || showSusp);
@@ -222,6 +250,16 @@ class NovusQuickMenuToggle extends QuickMenuToggle {
         this._sleepSeparator.visible = showSleepGroup;
         this._suspendItem.visible = showSusp;
         this._hibernateItem.visible = showHib;
+
+        if (showSusp && this._suspendItem.label) {
+            const canSusp = this._swapHibernateController?.canSuspend() ?? true;
+            const preferStH = settings?.get_boolean('prefer-suspend-then-hibernate') &&
+                this._swapHibernateController?.canSuspendThenHibernate();
+            this._suspendItem.reactive = Boolean(canSusp);
+            this._suspendItem.label.text = preferStH
+                ? _('Suspend then Hibernate')
+                : _('Suspend (Sleep)');
+        }
 
         if (showHib && this._hibernateItem.label) {
             const canHib = this._swapHibernateController?.canHibernate();

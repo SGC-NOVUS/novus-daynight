@@ -1,5 +1,5 @@
 UUID = Novus_Tools@sgc-novus.fun
-PKG_VERSION = 1.0.0
+PKG_VERSION = 2.0.0
 BASE_DIR = $(shell pwd)
 INSTALL_DIR = $(HOME)/.local/share/gnome-shell/extensions/$(UUID)
 STANDALONE_DIR = $(HOME)/.local/share/novus-daynight
@@ -36,7 +36,7 @@ EXTENSION_FILES = \
 all: build
 
 help:
-	@echo "Novus DayNight Build & Packaging Commands:"
+	@echo "SGC-NOVUS Tools Build & Packaging Commands:"
 	@echo "  make build              - Compile GSettings schemas and gettext .mo translations"
 	@echo "  make schemas            - Compile GSettings schemas"
 	@echo "  make translations       - Generate .mo files from po/"
@@ -75,14 +75,14 @@ install: build
 install-standalone: build
 	@mkdir -p $(STANDALONE_DIR) $(LOCAL_BIN_DIR) $(LOCAL_APPS_DIR)
 	@cp -r metadata.json constants.js themeUtils.js displayController.js brightnessController.js \
-		themeController.js solarCalculator.js timeCalculator.js logger.js \
-		prefs.js lib prefs schemas locale standalone $(STANDALONE_DIR)/
+		powerController.js swapHibernateController.js themeController.js solarCalculator.js \
+		timeCalculator.js logger.js prefs.js lib prefs schemas locale standalone $(STANDALONE_DIR)/
 	@chmod +x $(STANDALONE_DIR)/standalone/novus-daynight \
 		$(STANDALONE_DIR)/standalone/novus-daynight-daemon.js \
 		$(STANDALONE_DIR)/standalone/novus-daynight-prefs.js
 	@printf '#!/bin/sh\nexec gjs -m "%s/standalone/novus-daynight" "$$@"\n' "$(STANDALONE_DIR)" > $(LOCAL_BIN_DIR)/novus-daynight
 	@chmod +x $(LOCAL_BIN_DIR)/novus-daynight
-	@printf '[Desktop Entry]\nType=Application\nName=Novus DayNight\nComment=Automatic solar theme, wallpaper & brightness switcher\nExec=%s/novus-daynight prefs\nIcon=preferences-desktop-theme\nTerminal=false\nCategories=Settings;DesktopSettings;GTK;\n' "$(LOCAL_BIN_DIR)" > $(LOCAL_APPS_DIR)/fun.sgc_novus.NovusDayNight.desktop
+	@printf '[Desktop Entry]\nType=Application\nName=SGC-NOVUS Tools\nComment=Automatic solar theme, wallpaper, brightness & power profiles switcher\nExec=%s/novus-daynight prefs\nIcon=preferences-desktop-theme\nTerminal=false\nCategories=Settings;DesktopSettings;GTK;\n' "$(LOCAL_BIN_DIR)" > $(LOCAL_APPS_DIR)/fun.sgc_novus.NovusDayNight.desktop
 	@echo "Installed standalone CLI ($(LOCAL_BIN_DIR)/novus-daynight) and desktop entry."
 
 uninstall:

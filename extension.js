@@ -1,30 +1,19 @@
 import Gio from 'gi://Gio';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
-import {DBUS_INTERFACE_NAME, DBUS_OBJECT_PATH} from './constants.js';
+import {DBUS_OBJECT_PATH, EXTENSION_DBUS_IFACE_XML} from './constants.js';
 import {ExtensionController} from './extensionController.js';
-
-const ExtensionDBusIface = `
-<node>
-    <interface name="${DBUS_INTERFACE_NAME}">
-        <method name="GetDebugInfo">
-            <arg type="s" direction="out" name="info"/>
-        </method>
-        <method name="ForceThemeSwitch">
-            <arg type="b" direction="in" name="isDark"/>
-        </method>
-        <method name="ResetToAutomatic"/>
-    </interface>
-</node>`;
 
 export default class SGCNovusToolsExtension extends Extension {
     enable() {
         this._controller = new ExtensionController(this);
         this._controller.enable();
 
-        this._dbus = Gio.DBusExportedObject.wrapJSObject(ExtensionDBusIface, {
+        this._dbus = Gio.DBusExportedObject.wrapJSObject(EXTENSION_DBUS_IFACE_XML, {
             GetDebugInfo: () => this._controller?.getDebugInfo() ?? '{}',
             ForceThemeSwitch: isDark => this._controller?.forceThemeSwitch(isDark),
             ResetToAutomatic: () => this._controller?.resetToAutomatic(),
+            SetCaffeine: (enabled, durationSeconds) =>
+                this._controller?.setCaffeine(enabled, durationSeconds),
         });
         this._dbus.export(Gio.DBus.session, DBUS_OBJECT_PATH);
     }

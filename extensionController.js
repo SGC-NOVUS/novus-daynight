@@ -2,15 +2,31 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
-import {MS_PER_SECOND, RESUME_DELAY_SECONDS} from './constants.js';
+import {
+    LOGIN1_BUS_NAME,
+    LOGIN1_MANAGER_INTERFACE,
+    LOGIN1_OBJECT_PATH,
+    MS_PER_SECOND,
+    RESUME_DELAY_SECONDS,
+} from './constants.js';
 import {BrightnessController} from './brightnessController.js';
 import {ThemeController} from './themeController.js';
-import {PowerController, POWER_PROFILE_POWER_SAVER} from './powerController.js';
+import {
+    BATTERY_STATE_DISCHARGING,
+    POWER_PROFILE_POWER_SAVER,
+    PowerController,
+} from './powerController.js';
 import {SwapHibernateController} from './swapHibernateController.js';
 import {SolarCalculator} from './solarCalculator.js';
-import {TimeCalculator, resolveScheduleState, secondsUntilEvent} from './timeCalculator.js';
+import {
+    TimeCalculator,
+    formatSolarTimesForDebug,
+    resolveScheduleState,
+    resolveScheduledTimes,
+    secondsUntilEvent,
+} from './timeCalculator.js';
 import {NovusQuickSettingsIndicator} from './quickSettingsIndicator.js';
-import {debugLog, debugWarn, setDebugLogging} from './logger.js';
+import {debugWarn, setDebugLogging} from './logger.js';
 
 const ColorInterfaceXml = `
 <node>
@@ -37,6 +53,7 @@ export class ExtensionController {
         this._quickIndicator = null;
         this._settingsSignalIds = [];
         this._debugInfo = null;
+        this._criticalHibernateTriggered = false;
 
         this._manualModeActive = this._settings.get_boolean('manual-mode-active');
         this._manualModeIsDark = this._settings.get_boolean('manual-mode-is-dark');
@@ -46,13 +63,22 @@ export class ExtensionController {
             notify: (title, body) => Main.notify(title, body),
             gettext: _,
         });
-        this._powerController = new PowerController(this._settings);
-        this._swapHibernateController = new SwapHibernateController(this._settings);
+        this._powerController = new PowerController(this._settings, {enableAutomation: true});
+        this._swapHibernateController = new SwapHibernateController(this._settings, {
+            autoRefreshSwap: false,
+        });
+
         this._powerListenerRemover = this._powerController.addChangeListener(state => {
             this._quickIndicator?.syncState();
             this._handleOledDarkSync(state.activeProfile);
+            this._powerController?.applyScheduledKbdBacklight(this.isCurrentlyDark());
             this._handleCriticalBattery(state);
         });
+
+        this._swapListenerRemover = this._swapHibernateController.addChangeListener(() => {
+            this._quickIndicator?.syncState();
+        });
+
         this._solarCalculator = new SolarCalculator();
         this._timeCalculator = new TimeCalculator();
     }
@@ -73,36 +99,49 @@ export class ExtensionController {
         if (!this._settings || !this._settings.get_boolean('power-critical-battery-hibernate'))
             return;
 
-        if (!state.hasBattery || !state.onBattery)
+        if (!state.hasBattery || !state.onBattery) {
+            this._criticalHibernateTriggered = false;
             return;
+        }
 
         const threshold = this._settings.get_int('power-critical-battery-threshold');
-        if (state.batteryPercentage <= threshold) {
-            if (this._swapHibernateController?.canHibernate()) {
-                debugWarn(`ExtensionController: Critical battery ${state.batteryPercentage}% -> Hibernating`);
-                this._swapHibernateController.hibernate(false);
-            }
+        if (state.batteryPercentage > threshold) {
+            this._criticalHibernateTriggered = false;
+            return;
+        }
+
+        if (state.batteryState !== BATTERY_STATE_DISCHARGING || this._criticalHibernateTriggered)
+            return;
+
+        if (this._swapHibernateController?.canHibernate()) {
+            this._criticalHibernateTriggered = true;
+            debugWarn(`Critical battery (${state.batteryPercentage}%) -> triggering hibernate`);
+            this._swapHibernateController.hibernate(false);
         }
     }
 
     _handleOledDarkSync(activeProfile) {
-        if (!this._settings || !this._settings.get_boolean('power-sync-oled-dark'))
+        if (!this._settings || !this._themeController || this._manualModeActive)
             return;
 
-        if (this._manualModeActive)
+        if (!this._settings.get_boolean('power-sync-oled-dark'))
             return;
 
         const isSaver = activeProfile === POWER_PROFILE_POWER_SAVER;
-        if (isSaver && !this.isCurrentlyDark()) {
+        const currentlyDark = !this._themeController.isCurrentlyInLightMode();
+
+        if (isSaver && !currentlyDark) {
             this._themeController.switchTheme(true, true, false);
             this._quickIndicator?.syncState();
-        } else if (!isSaver && this._settings.get_string('last-auto-mode') === 'day' && this.isCurrentlyDark()) {
+        } else if (!isSaver && this._settings.get_string('last-auto-mode') === 'day' && currentlyDark) {
             this._themeController.switchTheme(false, true, false);
             this._quickIndicator?.syncState();
         }
     }
 
     _applyScheduledPowerProfile(isDark) {
+        this._powerController?.applyScheduledKbdBacklight(isDark);
+
         if (!this._settings || !this._settings.get_boolean('auto-power-profile-schedule'))
             return;
 
@@ -112,6 +151,11 @@ export class ExtensionController {
 
         if (targetProfile && this._powerController?.isAvailable())
             this._powerController.setActiveProfile(targetProfile);
+    }
+
+    setCaffeine(enabled, durationSeconds = 0) {
+        this._powerController?.setCaffeine(Boolean(enabled), Number(durationSeconds) || 0);
+        this._quickIndicator?.syncState();
     }
 
     enable() {
@@ -168,11 +212,9 @@ export class ExtensionController {
     isCurrentlyDark() {
         if (this._manualModeActive)
             return Boolean(this._manualModeIsDark);
-        if (this._debugInfo?.currentMode === 'night')
-            return true;
-        if (this._debugInfo?.currentMode === 'day')
-            return false;
-        return this._themeController ? !this._themeController.isCurrentlyInLightMode() : false;
+        if (this._themeController)
+            return !this._themeController.isCurrentlyInLightMode();
+        return this._debugInfo?.currentMode === 'night';
     }
 
     getNextSwitchTimeShort() {
@@ -227,8 +269,40 @@ export class ExtensionController {
             this._updateQuickSettingsIndicator();
         }));
 
-        this._settingsSignalIds.push(this._settings.connect('changed::enable-power-profiles', () => {
-            this._quickIndicator?.syncState();
+        for (const quickKey of [
+            'enable-power-profiles',
+            'show-quick-hibernate',
+            'show-quick-suspend',
+            'show-quick-caffeine',
+            'prefer-suspend-then-hibernate',
+        ]) {
+            this._settingsSignalIds.push(this._settings.connect(`changed::${quickKey}`, () => {
+                this._quickIndicator?.syncState();
+            }));
+        }
+
+        for (const kbdKey of [
+            'kbd-backlight-auto',
+            'kbd-backlight-night-level',
+            'kbd-backlight-off-in-saver',
+        ]) {
+            this._settingsSignalIds.push(this._settings.connect(`changed::${kbdKey}`, () => {
+                this._powerController?.applyScheduledKbdBacklight(this.isCurrentlyDark());
+            }));
+        }
+
+        for (const iconKey of ['sync-icon-theme', 'light-icon-theme', 'dark-icon-theme']) {
+            this._settingsSignalIds.push(this._settings.connect(`changed::${iconKey}`, () => {
+                this._themeController.switchTheme(
+                    this.isCurrentlyDark(),
+                    false,
+                    this._manualModeActive
+                );
+            }));
+        }
+
+        this._settingsSignalIds.push(this._settings.connect('changed::power-sync-oled-dark', () => {
+            this._handleOledDarkSync(this._powerController?.getActiveProfile());
         }));
 
         this._settingsSignalIds.push(this._settings.connect('changed::auto-power-profile-schedule', () => {
@@ -304,7 +378,7 @@ export class ExtensionController {
                     }
                 } catch (e) {
                     if (!e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-                        debugWarn(`NovusDayNight: Color D-Bus proxy unavailable: ${e.message}`);
+                        debugWarn(`Color D-Bus proxy unavailable: ${e.message}`);
                 }
             }
         );
@@ -315,24 +389,24 @@ export class ExtensionController {
         this._monitorsChangedId = monitorManager.connect('monitors-changed', () => {
             if (this._manualModeActive) {
                 this._brightnessController.applyManualBrightness(this._manualModeIsDark).catch(e => {
-                    debugWarn('NovusDayNight: Failed to apply manual brightness on hotplug:', e);
+                    debugWarn('Failed to apply manual brightness on hotplug:', e);
                 });
                 return;
             }
 
             const allowStatic = !this._brightnessController.isInTransitionWindow();
             this._brightnessController.updateBrightness(allowStatic).catch(e => {
-                debugWarn('NovusDayNight: Failed to apply brightness on hotplug:', e);
+                debugWarn('Failed to apply brightness on hotplug:', e);
             });
         });
     }
 
     _setupSuspendResumeHandler() {
         this._suspendSignalId = Gio.DBus.system.signal_subscribe(
-            'org.freedesktop.login1',
-            'org.freedesktop.login1.Manager',
+            LOGIN1_BUS_NAME,
+            LOGIN1_MANAGER_INTERFACE,
             'PrepareForSleep',
-            '/org/freedesktop/login1',
+            LOGIN1_OBJECT_PATH,
             null,
             Gio.DBusSignalFlags.NONE,
             (_connection, _sender, _path, _iface, _signal, params) => {
@@ -360,6 +434,32 @@ export class ExtensionController {
             info.secondsToNextEvent = secondsUntilEvent(info.nextEventTimestamp, Date.now());
         info.manualModeActive = this._manualModeActive;
         info.manualModeIsDark = this._manualModeIsDark;
+
+        if (this._powerController) {
+            info.power = {
+                available: this._powerController.isAvailable(),
+                activeProfile: this._powerController.getActiveProfile() || 'N/A',
+                onBattery: this._powerController.isOnBattery(),
+                batteryPercentage: this._powerController.getBatteryPercentage(),
+                batteryState: this._powerController.getBatteryState(),
+                hasBattery: this._powerController.hasBattery(),
+                timeToEmpty: this._powerController.getTimeToEmpty(),
+                timeToFull: this._powerController.getTimeToFull(),
+                energyRate: this._powerController.getEnergyRate(),
+                batteryHealth: this._powerController.getBatteryHealth(),
+                chargeCycles: this._powerController.getChargeCycles(),
+                hasKbdBacklight: this._powerController.hasKbdBacklight(),
+                kbdBacklightPercent: this._powerController.getKbdBacklightPercent(),
+                caffeineActive: this._powerController.isCaffeineActive(),
+                caffeineRemainingSeconds: this._powerController.getCaffeineRemainingSeconds(),
+                lastScenario: this._powerController.getLastScenario() || 'standard',
+                canHibernate: Boolean(this._swapHibernateController?.canHibernate()),
+                canSuspend: Boolean(this._swapHibernateController?.canSuspend()),
+                canSuspendThenHibernate: Boolean(this._swapHibernateController?.canSuspendThenHibernate()),
+                canHybridSleep: Boolean(this._swapHibernateController?.canHybridSleep()),
+            };
+        }
+
         return JSON.stringify(info);
     }
 
@@ -375,7 +475,7 @@ export class ExtensionController {
         this._quickIndicator?.syncState();
 
         this._brightnessController.applyManualBrightness(isDark).catch(e => {
-            debugWarn('NovusDayNight: Failed to apply manual brightness:', e);
+            debugWarn('Failed to apply manual brightness:', e);
         });
     }
 
@@ -407,57 +507,16 @@ export class ExtensionController {
         }
 
         const now = new Date();
-        const latitude = this._settings.get_string('manual-latitude');
-        const longitude = this._settings.get_string('manual-longitude');
-
-        let lightTime = null;
-        let darkTime = null;
-        let solarTimes = null;
-        let lightModeTrigger = 'custom';
-        let darkModeTrigger = 'custom';
-
-        const hasCoordinates = Boolean(
-            latitude && longitude && this._solarCalculator.validateCoordinates(latitude, longitude)
-        );
-
-        if (hasCoordinates) {
-            solarTimes = this._solarCalculator.getSolarTimes(now, latitude, longitude);
-            if (solarTimes) {
-                lightModeTrigger = this._settings.get_string('light-mode-trigger');
-                lightTime = this._timeCalculator.parseTriggerTime(
-                    lightModeTrigger,
-                    solarTimes,
-                    now,
-                    'light',
-                    this._settings
-                );
-
-                darkModeTrigger = this._settings.get_string('dark-mode-trigger');
-                darkTime = this._timeCalculator.parseTriggerTime(
-                    darkModeTrigger,
-                    solarTimes,
-                    now,
-                    'dark',
-                    this._settings
-                );
-            }
-        }
-
-        if (!lightTime || !darkTime) {
-            lightTime = this._timeCalculator.parseCustomTime(
-                this._settings.get_string('custom-light-time'),
+        const {lightTime, darkTime, lightModeTrigger, darkModeTrigger, solarTimes} =
+            resolveScheduledTimes(
+                this._settings,
+                this._solarCalculator,
+                this._timeCalculator,
                 now
             );
-            darkTime = this._timeCalculator.parseCustomTime(
-                this._settings.get_string('custom-dark-time'),
-                now
-            );
-            lightModeTrigger = 'custom';
-            darkModeTrigger = 'custom';
-        }
 
         if (!lightTime || !darkTime) {
-            console.error('NovusDayNight: Failed to resolve day/night schedule times');
+            console.error('[SGC-NOVUS Tools] Failed to resolve day/night schedule times');
             return;
         }
 
@@ -476,13 +535,18 @@ export class ExtensionController {
         if (periodChanged)
             this._settings.set_string('last-auto-mode', currentPeriod);
 
-        this._themeController.switchTheme(isDarkNow, periodChanged, false);
+        const isOledSaverDark =
+            !isDarkNow &&
+            this._settings.get_boolean('power-sync-oled-dark') &&
+            this._powerController?.getActiveProfile() === POWER_PROFILE_POWER_SAVER;
+
+        this._themeController.switchTheme(isDarkNow || isOledSaverDark, periodChanged, false);
         if (periodChanged)
             this._applyScheduledPowerProfile(isDarkNow);
 
         if (periodChanged && !this._brightnessController.isInTransitionWindow()) {
             this._brightnessController.updateBrightness(true).catch(e => {
-                debugWarn('NovusDayNight: Failed to apply static brightness:', e);
+                debugWarn('Failed to apply static brightness:', e);
             });
         }
 
@@ -513,7 +577,7 @@ export class ExtensionController {
                 this._themeController.switchTheme(switchToDark, true, false);
                 this._applyScheduledPowerProfile(switchToDark);
                 this._brightnessController.updateBrightness(true).catch(e => {
-                    debugWarn('NovusDayNight: Scheduled brightness update error:', e);
+                    debugWarn('Scheduled brightness update error:', e);
                 });
                 this._scheduleNextChangeEvent();
                 return GLib.SOURCE_REMOVE;
@@ -644,7 +708,7 @@ export class ExtensionController {
                     }
                 }
             } catch (e) {
-                debugWarn('NovusDayNight: Could not build brightness status:', e);
+                debugWarn('Could not build brightness status:', e);
             }
         }
 
@@ -658,34 +722,10 @@ export class ExtensionController {
             ? this._solarCalculator.getSolarTimes(tomorrow, latitude, longitude)
             : null;
 
-        const formatDate = date =>
-            date.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'});
-
-        const formatSolar = (times, date) => {
-            if (!times)
-                return null;
-            return {
-                date: formatDate(date),
-                firstLight: times.first_light?.toLocaleTimeString() || 'N/A',
-                nauticalDawn: times.nautical_dawn?.toLocaleTimeString() || 'N/A',
-                dawn: times.dawn?.toLocaleTimeString() || 'N/A',
-                sunrise: times.sunrise?.toLocaleTimeString() || 'N/A',
-                sunriseEnd: times.sunrise_end?.toLocaleTimeString() || 'N/A',
-                goldenHourEnd: times.golden_hour_end?.toLocaleTimeString() || 'N/A',
-                solarNoon: times.solar_noon?.toLocaleTimeString() || 'N/A',
-                goldenHour: times.golden_hour?.toLocaleTimeString() || 'N/A',
-                sunsetStart: times.sunset_start?.toLocaleTimeString() || 'N/A',
-                sunset: times.sunset?.toLocaleTimeString() || 'N/A',
-                dusk: times.dusk?.toLocaleTimeString() || 'N/A',
-                nauticalDusk: times.nautical_dusk?.toLocaleTimeString() || 'N/A',
-                lastLight: times.last_light?.toLocaleTimeString() || 'N/A',
-            };
-        };
-
         const prev = this._debugInfo ?? {};
         this._debugInfo = {
-            solarTimesToday: formatSolar(solarTimes, now),
-            solarTimesTomorrow: formatSolar(tomorrowSolar, tomorrow),
+            solarTimesToday: formatSolarTimesForDebug(solarTimes, now),
+            solarTimesTomorrow: formatSolarTimesForDebug(tomorrowSolar, tomorrow),
             currentTime: now.toLocaleString(),
             lightTime: lightTime ? lightTime.toLocaleString() : 'N/A',
             darkTime: darkTime ? darkTime.toLocaleString() : 'N/A',
@@ -740,6 +780,11 @@ export class ExtensionController {
         if (this._powerListenerRemover) {
             this._powerListenerRemover();
             this._powerListenerRemover = null;
+        }
+
+        if (this._swapListenerRemover) {
+            this._swapListenerRemover();
+            this._swapListenerRemover = null;
         }
 
         if (this._powerController) {

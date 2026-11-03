@@ -9,7 +9,8 @@ import {createStatusPage} from './prefs/statusPage.js';
 
 export default class SGCNovusToolsPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
-        window.set_default_size(740, 680);
+        window.set_default_size(760, 700);
+        window.search_enabled = true;
 
         const settings = this.getSettings();
         setDebugLogging(settings.get_boolean('debug-logging'));
@@ -23,7 +24,7 @@ export default class SGCNovusToolsPreferences extends ExtensionPreferences {
             createPowerPage(window, settings),
             createBrightnessPage(window, settings),
             createStatusPage(settings),
-            createAboutPage(this.metadata),
+            createAboutPage(window, settings, this.metadata),
         ];
 
         for (const {page} of pages)

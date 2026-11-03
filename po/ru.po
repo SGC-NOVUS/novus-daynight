@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Novus DayNight 2.0\n"
-"Report-Msgid-Bugs-To: https://github.com/SGC-NOVUS/novus-daynight/issues\n"
+"Report-Msgid-Bugs-To: https://github.com/SGC-NOVUS/novus-tools/issues\n"
 "POT-Creation-Date: 2026-10-31 19:00+0200\n"
 "PO-Revision-Date: 2026-10-31 19:00+0200\n"
 "Last-Translator: SGC-NOVUS\n"
@@ -1160,6 +1160,179 @@ msgstr "Не настроена в ядре (статус: %s). Укажите r
 
 msgid "Not configured"
 msgstr "Не настроена"
+
+msgid "Manage how power and sleep options appear in the GNOME Quick Settings panel."
+msgstr "Управление отображением профилей питания и кнопок сна в панели быстрых настроек GNOME."
+
+msgid "Prolonged Inactivity Sleep Type on AC Power"
+msgstr "Тип сна при бездействии от сети"
+
+msgid "Whether to sleep or hibernate after inactivity timeout while plugged in"
+msgstr "Переходить в спящий режим или гибернацию после таймаута бездействия при питании от сети"
+
+msgid "Power & Energy Status"
+msgstr "Питание и энергопотребление"
+
+msgid "Enable SGC-NOVUS Tools in GNOME Extensions to start automatic switching"
+msgstr "Включите SGC-NOVUS Tools в Расширениях GNOME для запуска автоматического переключения"
+
+msgid "Use 24-hour HH:MM format (e.g. 07:00 or 19:30)"
+msgstr "Используйте 24-часовой формат ЧЧ:ММ (например, 07:00 или 19:30)"
+
+msgid "Analyzing…"
+msgstr "Анализ…"
+
+msgid "Sync Icon Theme with Day / Night"
+msgstr "Синхронизировать тему иконок с Днём / Ночью"
+
+msgid "Switch icon packs (e.g. Papirus-Light / Papirus-Dark) automatically"
+msgstr "Автоматически переключать наборы иконок (например, Papirus-Light / Papirus-Dark)"
+
+msgid "Light Icon Theme"
+msgstr "Светлая тема иконок"
+
+msgid "Icon theme to use during the day"
+msgstr "Тема иконок для дневного времени"
+
+msgid "Dark Icon Theme"
+msgstr "Тёмная тема иконок"
+
+msgid "Icon theme to use at night"
+msgstr "Тема иконок для ночного времени"
+
+msgid "Night Light Color Temperature (K)"
+msgstr "Цветовая температура Ночного света (K)"
+
+msgid "Lower Kelvin values produce a warmer amber tint (1700K–4700K)"
+msgstr "Меньшие значения Кельвин дают более тёплый янтарный оттенок (1700K–4700K)"
+
+msgid "Battery Health & Power Draw"
+msgstr "Здоровье батареи и энергопотребление"
+
+msgid "Analyzing battery telemetry…"
+msgstr "Анализ телеметрии батареи…"
+
+msgid "Power Draw"
+msgstr "Потребление"
+
+msgid "Health"
+msgstr "Здоровье"
+
+msgid "Cycles"
+msgstr "Циклы"
+
+msgid "Keep Awake (Caffeine)"
+msgstr "Не засыпать (Кофеин)"
+
+msgid "Show Keep Awake (Caffeine) in Quick Settings"
+msgstr "Показывать «Не засыпать (Кофеин)» в быстрых настройках"
+
+msgid "Prevent screen blanking and automatic system sleep from the top bar menu"
+msgstr "Блокировать гашение экрана и переход в спящий режим из верхнего меню"
+
+msgid "Keep Awake Duration"
+msgstr "Длительность режима «Не засыпать»"
+
+msgid "Default duration before Keep Awake automatically turns off"
+msgstr "Время по умолчанию до автоматического отключения блокировки сна"
+
+msgid "Indefinitely (Until turned off)"
+msgstr "Бессрочно (пока не выключено вручную)"
+
+msgid "hour"
+msgstr "час"
+
+msgid "hours"
+msgstr "часа"
+
+msgid "Auto 60 Hz Refresh Rate on Battery / Saver"
+msgstr "Автоснижение частоты до 60 Гц от батареи и в энергосбережении"
+
+msgid "Automatically reduce high refresh rate displays (120/144/165 Hz) to 60 Hz in Power Saver or on battery"
+msgstr "Автоматически снижать частоту экрана (120/144/165 Гц) до 60 Гц для экономии заряда"
+
+msgid "Automate Keyboard Backlight"
+msgstr "Автоматизация подсветки клавиатуры"
+
+msgid "Turn on keyboard backlight at night and off during daytime via UPower D-Bus"
+msgstr "Включать подсветку клавиатуры ночью и выключать днём через UPower D-Bus"
+
+msgid "Night Keyboard Backlight Level (%)"
+msgstr "Уровень подсветки клавиатуры ночью (%)"
+
+msgid "Target keyboard backlight brightness at night"
+msgstr "Целевая яркость подсветки клавиатуры в ночном режиме"
+
+msgid "Turn Off Keyboard Backlight in Power Saver"
+msgstr "Выключать подсветку клавиатуры в энергосбережении"
+
+msgid "Extinguish keyboard LEDs when Power Saver profile is active"
+msgstr "Гасить подсветку клавиатуры при активации профиля энергосбережения"
+
+msgid "Hybrid Sleep"
+msgstr "Гибридный сон"
+
+msgid "Suspend then Hibernate"
+msgstr "Сон с переходом в гибернацию"
+
+msgid "Prefer Suspend-then-Hibernate"
+msgstr "Предпочитать «Сон с переходом в гибернацию»"
+
+msgid "Use systemd SuspendThenHibernate for sleep actions when supported by the system"
+msgstr "Использовать режим SuspendThenHibernate для действий сна, если поддерживается системой"
+
+msgid "Configuration Backup & Restore"
+msgstr "Резервное копирование и восстановление настроек"
+
+msgid "Export your settings to a JSON file, restore from a backup, or reset to factory defaults."
+msgstr "Экспорт настроек в JSON-файл, восстановление из резервной копии или сброс по умолчанию."
+
+msgid "Export Configuration"
+msgstr "Экспорт конфигурации"
+
+msgid "Save all current preferences to a portable JSON file"
+msgstr "Сохранить все текущие настройки в переносимый файл JSON"
+
+msgid "Export…"
+msgstr "Экспорт…"
+
+msgid "Configuration exported successfully"
+msgstr "Конфигурация успешно экспортирована"
+
+msgid "Failed to write configuration file"
+msgstr "Не удалось записать файл конфигурации"
+
+msgid "Import Configuration"
+msgstr "Импорт конфигурации"
+
+msgid "Load and apply settings from a previously exported JSON file"
+msgstr "Загрузить и применить настройки из ранее сохранённого файла JSON"
+
+msgid "Import…"
+msgstr "Импорт…"
+
+msgid "JSON Configuration Files"
+msgstr "Файлы конфигурации JSON"
+
+msgid "Imported %d settings successfully"
+msgstr "Успешно импортировано параметров: %d"
+
+msgid "Invalid configuration file"
+msgstr "Некорректный файл конфигурации"
+
+msgid "Reset All Settings"
+msgstr "Сбросить все настройки"
+
+msgid "Restore all extension preferences to their factory defaults"
+msgstr "Восстановить все настройки расширения к значениям по умолчанию"
+
+msgid "Reset Defaults"
+msgstr "Сбросить"
+
+msgid "All settings restored to defaults"
+msgstr "Все настройки сброшены к значениям по умолчанию"
+
+
 
 
 
